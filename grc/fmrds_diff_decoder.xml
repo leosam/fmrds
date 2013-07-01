@@ -1,0 +1,15 @@
+<block>
+  <name>Diff Decoder</name>
+  <key>fmrds_diff_decoder</key>
+  <category>FMRDS</category>
+  <import>import fmrds</import>
+  <make>fmrds.diff_decoder()</make>
+  <sink>
+    <name>in</name>
+    <type>byte</type>
+  </sink>
+  <source>
+    <name>out</name>
+    <type>byte</type>
+  </source>
+</block>

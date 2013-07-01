@@ -1,0 +1,20 @@
+<block>
+  <name>Sync</name>
+  <key>fmrds_sync</key>
+  <category>FMRDS</category>
+  <import>import fmrds</import>
+  <make>fmrds.sync()</make>
+  <sink>
+    <name>in</name>
+    <type>byte</type>
+  </sink>
+  <source>
+    <name>out</name>
+    <type>byte</type>
+    <nports>2</nports>
+  </source>
+  <source>
+    <name>sync</name>
+    <type>byte</type>
+  </source>
+</block>

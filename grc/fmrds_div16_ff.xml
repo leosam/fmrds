@@ -1,0 +1,20 @@
+<block>
+  <name>Div16</name>
+  <key>fmrds_div16_ff</key>
+  <category>FMRDS</category>
+  <import>import fmrds</import>
+  <make>fmrds.div16_ff()</make>
+  <sink>
+    <name>in</name>
+    <type>float</type>
+  </sink>
+  <source>
+    <name>out</name>
+    <type>float</type>
+  </source>
+  <doc>
+This block divides the frequency of any cyclic input signal by 16. \
+The input and output signals must be both floats and cross (or touch) 0 cyclicly.\
+At 16 "0" crossings the output changes state forming a square wave at the output from 0 to 1.
+        </doc>
+</block>

@@ -1,0 +1,19 @@
+<block>
+  <name>Biphase decoder</name>
+  <key>fmrds_biphase_decoder</key>
+  <category>FMRDS</category>
+  <import>import fmrds</import>
+  <make>fmrds.biphase_decoder()</make>
+  <sink>
+    <name>in</name>
+    <type>float</type>
+  </sink>
+  <sink>
+    <name>clk</name>
+    <type>float</type>
+  </sink>
+  <source>
+    <name>out</name>
+    <type>float</type>
+  </source>
+</block>
