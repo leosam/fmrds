@@ -114,6 +114,9 @@ namespace gr {
         char *out = (char *) output_items[0];
 		char *syncd = (char *) output_items[1];
 
+		// Sync'd flag
+		char sync = 0;
+
 		in += 25; // ensure that i - 1 is valid.
 
 		for (int i = 0; i < noutput_items; i+=26)
@@ -129,41 +132,56 @@ namespace gr {
 					res[y] += in[i-x] * __parity_chk[x][y];
 				}
 				
-				// All operation are modulo 2 (bits)
-				res[y] = res[y] % 2;
+				// All operation are modulo 2 (bits): apply a mask to 1
+				res[y] = res[y] & 1;
 			}
 			
 			// Check against known syndromes
+
 			for(int x = 0; x < 5; x++)
 			{
+				sync = x;
+
 				for(int y = 0; y < 10; y++)
 				{
-					cmp[x] += res[x] * __syndromes[x][y];
+					if(res[y] != __syndromes[x][y])
+					{
+						sync = 0;
+						break;
+					}
 				}
-
-				cmp[x] = cmp[x] == 10;
 			}
-		
+
 			// Pre-initialize with none, in case the next block doesnt capture any sync
-			__last_syndrome = -1;
+			//__last_syndrome = -1;
 
 			// Decrement last seen
-			__last_seen -= 1;
+			//__last_seen -= 1;
 
-			for(int x = 0; x < 5; x++)
+			//for(int x = 0; x < 5; x++)
+			//{
+			//	if(cmp[x])
+			//	{
+			//		__last_syndrome = x;
+			//		__last_seen = 26;
+			//		syncd[i] = x;
+			//	}
+			//}
+
+			// Tagged passthrough the input to the output
+			if(sync)
 			{
-				if(cmp[x])
-				{
-					__last_syndrome = x;
-					__last_seen = 26;
-					syncd[i] = x;
-				}
+				out[i] = in[i] & 2;
 			}
-
-			// Passthrough the input to the output
-			out[i] = in[i];
+			else
+			{
+				out[i] = in[i] & 1;
+			}
 			
 		}
+
+		
+		
         // Do <+signal processing+>
         // Tell runtime system how many input items we consumed on
         // each input stream.
