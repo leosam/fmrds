@@ -25,6 +25,9 @@
 #include <gr_io_signature.h>
 #include "sync_impl.h"
 
+#include <stdio.h>
+#include <string.h>
+
 namespace gr {
   namespace fmrds {
 
@@ -105,7 +108,7 @@ namespace gr {
     void
     sync_impl::forecast (int noutput_items, gr_vector_int &ninput_items_required)
     {
-        /* <+forecast+> e.g. ninput_items_required[0] = noutput_items */
+        ninput_items_required[0] = noutput_items;
     }
 
     int sync_impl::general_work (int noutput_items, gr_vector_int &ninput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &output_items)
@@ -117,40 +120,73 @@ namespace gr {
 		// Sync'd flag
 		char sync = 0;
 
-		in += 25; // ensure that i - 1 is valid.
+		//in += 25; // ensure that i - 1 is valid.
 
-		for (int i = 0; i < noutput_items; i+=26)
+		for (int i = 0; i < noutput_items; i++)
 		{
 			char res[10] = {0,0,0,0,0,0,0,0,0,0};
 			char cmp[5] = {0,0,0,0,0};
 		
 			// Matrix multiplication
-			for(int y = 0; y < 10; y++)
+			for(int j = 0; j < 10; j++)
 			{
-				for(int x = 0; x < 26; x++)
-				{
-					res[y] += in[i-x] * __parity_chk[x][y];
-				}
-				
-				// All operation are modulo 2 (bits): apply a mask to 1
-				res[y] = res[y] & 1;
+				res[j] += in[i] * __parity_chk[25-i][j];
+			}
+
+			// All operation are modulo 2 (bits): apply a mask to 1
+			for(int j = 0; j < 10; j++)
+			{
+				res[j] = res[j] & 1;
 			}
 			
 			// Check against known syndromes
-
 			for(int x = 0; x < 5; x++)
 			{
-				sync = x;
-
-				for(int y = 0; y < 10; y++)
+				if(memcmp(res, __syndromes[5], 10) == 0)
 				{
-					if(res[y] != __syndromes[x][y])
-					{
-						sync = 0;
-						break;
-					}
+					sync = x + 1;
+					break;
 				}
 			}
+
+			out[i] = in[i];
+			syncd[i] = sync;
+		}
+
+		//for (int i = 0; i < 26; i++)
+		//{
+
+			// char res[10] = {0,0,0,0,0,0,0,0,0,0};
+			// char cmp[5] = {0,0,0,0,0};
+		
+			// // Matrix multiplication
+			// for(int y = 0; y < 10; y++)
+			// {
+			// 	for(int x = 0; x < 26; x++)
+			// 	{
+			// 		res[y] += in[i-x] * __parity_chk[x][y];
+			// 	}
+				
+			// 	// All operation are modulo 2 (bits): apply a mask to 1
+			// 	res[y] = res[y] & 1;
+			// }
+			
+			// // Check against known syndromes
+
+			// for(int x = 0; x < 5; x++)
+			// {
+			// 	// the matrix index starts at 0, so the +1 is necessary
+			// 	sync = x + 1;
+
+			// 	for(int y = 0; y < 10; y++)
+			// 	{
+			// 		if(res[y] != __syndromes[x][y])
+			// 		{
+			// 			sync = 0;
+			// 			break;
+			// 		}
+			// 	}
+			// }
 
 			// Pre-initialize with none, in case the next block doesnt capture any sync
 			//__last_syndrome = -1;
@@ -169,16 +205,10 @@ namespace gr {
 			//}
 
 			// Tagged passthrough the input to the output
-			if(sync)
-			{
-				out[i] = in[i] & 2;
-			}
-			else
-			{
-				out[i] = in[i] & 1;
-			}
+
+		//	out[i] = in[i];
 			
-		}
+		//}
 
 		
 		
