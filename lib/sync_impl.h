@@ -28,8 +28,6 @@ namespace gr {
 
     class sync_impl : public sync
     {
-     private:
-      // Nothing to declare in this block.
 
      public:
       sync_impl();
@@ -42,6 +40,28 @@ namespace gr {
 		       gr_vector_int &ninput_items,
 		       gr_vector_const_void_star &input_items,
 		       gr_vector_void_star &output_items);
+
+      private:
+        // Parity check matrix
+        int d_parity_chk[26][10];
+
+        // Precalculated syndromes for the check words
+        int d_syndromes[50];
+
+        // Last identified syndrome
+        //      0->A, 1->B, 2->C, 3->C', 4->D
+        //     -1->"no sync"              
+        int d_last_syndrome;
+
+        // Last identified syndrome
+        //      occurence
+        int d_last_seen;
+
+        // Sync counter
+        int d_sync_cntr;
+
+        // Overall counter
+        int d_overall;
     };
 
   } // namespace fmrds

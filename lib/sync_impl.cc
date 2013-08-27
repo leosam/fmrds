@@ -29,58 +29,9 @@
 #include <string.h>
 
 namespace gr {
-  namespace fmrds {
-
-	// Initialization of the parity check matrix
-	//     This is used for syndrome calculation
-	//     and syncronization
-	const char __parity_chk[26][10] = 
-		                     {{1,0,0,0,0,0,0,0,0,0},
-					  		  {0,1,0,0,0,0,0,0,0,0},
-							  {0,0,1,0,0,0,0,0,0,0},
-							  {0,0,0,1,0,0,0,0,0,0},
-							  {0,0,0,0,1,0,0,0,0,0},
-							  {0,0,0,0,0,1,0,0,0,0},
-							  {0,0,0,0,0,0,1,0,0,0},
-							  {0,0,0,0,0,0,0,1,0,0},
-							  {0,0,0,0,0,0,0,0,1,0},
-							  {0,0,0,0,0,0,0,0,0,1},
-							  {1,0,1,1,0,1,1,1,0,0},
-							  {0,1,0,1,1,0,1,1,1,0},
-							  {0,0,1,0,1,1,0,1,1,1},
-							  {1,0,1,0,0,0,0,1,1,1},
-							  {1,1,1,0,0,1,1,1,1,1},
-							  {1,1,0,0,0,1,0,0,1,1},
-							  {1,1,0,1,0,1,0,1,0,1},
-							  {1,1,0,1,1,1,0,1,1,0},
-							  {0,1,1,0,1,1,1,0,1,1},
-							  {1,0,0,0,0,0,0,0,0,1},
-							  {1,1,1,1,0,1,1,1,0,0},
-							  {0,1,1,1,1,0,1,1,1,0},
-							  {0,0,1,1,1,1,0,1,1,1},
-							  {1,0,1,0,1,0,0,1,1,1},
-							  {1,1,1,0,0,0,1,1,1,1},
-							  {1,1,0,0,0,1,1,0,1,1}};
-
-    // Initialization of the precalculated syndromes for the check words
-	const char __syndromes[5][10] = 
-		                     {{1,1,1,1,0,1,1,0,0,0},  // check word A
-					  		  {1,1,1,1,0,1,0,1,0,0},  // check word B
-							  {1,0,0,1,0,1,1,1,0,0},  // check word C
-							  {1,1,1,1,0,0,1,1,0,0},  // check word C'
-							  {1,0,0,1,0,1,1,0,0,0}}; // check word D						  
+  namespace fmrds {		  
 	
-	// Last identified syndrome
-    //      0->A, 1->B, 2->C, 3->C', 4->D
-	//     -1->"no sync"						  
-	char __last_syndrome = -1;
-
-	// Last identified syndrome
-    //      occurence
-	char __last_seen = -1;
-	
-    sync::sptr
-    sync::make()
+    sync::sptr sync::make()
     {
       return gnuradio::get_initial_sptr (new sync_impl());
     }
@@ -88,14 +39,69 @@ namespace gr {
     /*
      * The private constructor
      */
-    sync_impl::sync_impl()
-      : gr_block("sync",
-		      gr_make_io_signature(1, 1, sizeof (char)),
-		      gr_make_io_signature(2, 2, sizeof (char)))
+    sync_impl::sync_impl() : gr_block("sync", gr_make_io_signature(1, 1, sizeof (char)), gr_make_io_signature(2, 2, sizeof (char)))
     {
 		// Size of a group
     	set_history(26);
-		
+    	//set_output_multiple(26);
+
+    	// Pparity check matrix
+		//     This is used for syndrome calculation
+		//     and syncronization
+    	int pchk[26][10] =  {{1,0,0,0,0,0,0,0,0,0},
+						  	 {0,1,0,0,0,0,0,0,0,0},
+							 {0,0,1,0,0,0,0,0,0,0},
+							 {0,0,0,1,0,0,0,0,0,0},
+							 {0,0,0,0,1,0,0,0,0,0},
+							 {0,0,0,0,0,1,0,0,0,0},
+							 {0,0,0,0,0,0,1,0,0,0},
+							 {0,0,0,0,0,0,0,1,0,0},
+							 {0,0,0,0,0,0,0,0,1,0},
+							 {0,0,0,0,0,0,0,0,0,1},
+							 {1,0,1,1,0,1,1,1,0,0},
+							 {0,1,0,1,1,0,1,1,1,0},
+							 {0,0,1,0,1,1,0,1,1,1},
+							 {1,0,1,0,0,0,0,1,1,1},
+							 {1,1,1,0,0,1,1,1,1,1},
+							 {1,1,0,0,0,1,0,0,1,1},
+							 {1,1,0,1,0,1,0,1,0,1},
+							 {1,1,0,1,1,1,0,1,1,0},
+							 {0,1,1,0,1,1,1,0,1,1},
+							 {1,0,0,0,0,0,0,0,0,1},
+							 {1,1,1,1,0,1,1,1,0,0},
+							 {0,1,1,1,1,0,1,1,1,0},
+							 {0,0,1,1,1,1,0,1,1,1},
+							 {1,0,1,0,1,0,0,1,1,1},
+							 {1,1,1,0,0,0,1,1,1,1},
+							 {1,1,0,0,0,1,1,0,1,1}};
+
+		// Initialization of the precalculated syndromes for the check words
+		int syns[50] = 		{1,1,1,1,0,1,1,0,0,0,  // check word A
+							 1,1,1,1,0,1,0,1,0,0,  // check word B
+							 1,0,0,1,0,1,1,1,0,0,  // check word C
+							 1,1,1,1,0,0,1,1,0,0,  // check word C'
+							 1,0,0,1,0,1,1,0,0,0}; // check word D
+
+    	// Initializing the property matrices
+    	for (int i = 0; i < 26; i++)
+    	{
+    		for (int j = 0; j < 10; j++)
+    		{
+    			d_parity_chk[i][j] = pchk[i][j];
+    		}
+    	}
+
+    	// Initializing the property matrices
+    	for (int i = 0; i < 50; i++)
+    	{
+    		d_syndromes[i] = syns[i];
+    	}
+
+    	d_last_syndrome = -1;
+     	d_last_seen = 0;
+	    d_sync_cntr = 0;
+    	d_overall = 0;
+
     }
 
     /*
@@ -111,106 +117,101 @@ namespace gr {
         ninput_items_required[0] = noutput_items;
     }
 
+
+
     int sync_impl::general_work (int noutput_items, gr_vector_int &ninput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &output_items)
     {
         const char *in = (const char *) input_items[0];
         char *out = (char *) output_items[0];
 		char *syncd = (char *) output_items[1];
 
-		// Sync'd flag
-		char sync = 0;
+		//if (d_sync_cntr != 0)
+		//printf(" %d ", noutput_items);
 
-		//in += 25; // ensure that i - 1 is valid.
+		//d_overall++;
+
+		//printf("= %d, %d\n", in[0], in[1]);
+		int res[10] = {0,0,0,0,0,0,0,0,0,0};
+
+		int tmp = 0;
+
+		int val = 0;
+		
 
 		for (int i = 0; i < noutput_items; i++)
 		{
-			char res[10] = {0,0,0,0,0,0,0,0,0,0};
-			char cmp[5] = {0,0,0,0,0};
-		
+			//memset(res, 0, sizeof(res));
+
+			// TODO: problem with time delay in sync marking. (always setting the sync at the last bit) 
 			// Matrix multiplication
-			for(int j = 0; j < 10; j++)
+			for (int y = 0; y < 10; y++)
 			{
-				res[j] += in[i] * __parity_chk[25-i][j];
+				tmp = 0;
+
+				for (int x = 0; x < 26; x++)
+				{
+					tmp += d_parity_chk[x][y] * in[i+x];
+				}
+
+				res[y] = tmp % 2;
 			}
 
 			// All operation are modulo 2 (bits): apply a mask to 1
-			for(int j = 0; j < 10; j++)
-			{
-				res[j] = res[j] & 1;
-			}
+			//for (int y = 0; y < 10; y++)
+			//{
+			//	res[y] = res[y] & (char)1;
+			//}
 			
 			// Check against known syndromes
-			for(int x = 0; x < 5; x++)
+			for (int x = 0; x < 5; x++)
 			{
-				if(memcmp(res, __syndromes[5], 10) == 0)
+				if (memcmp(res, &d_syndromes[x * 10], sizeof(res)) == 0)
 				{
-					sync = x + 1;
-					break;
+					if (x == 0)
+					{
+						printf(" [");
+
+						for (int k = 0; k < 26; k++)
+						{
+							printf("%d ",in[i+k]);
+						}	
+						printf("] ");
+					}
+
+					if (x == 0)
+					{
+						printf("[");
+						for (int k = 0; k < 10; k++)
+						{
+							printf("%d ", res[k]);
+						}	
+						printf("] %d\n", x);
+					}
+
+					d_last_syndrome = x;
+					//d_sync_cntr = 25;
+					//d_last_seen = d_overall;
+					//break;
 				}
 			}
 
-			out[i] = in[i];
-			syncd[i] = sync;
-		}
-
-		//for (int i = 0; i < 26; i++)
-		//{
-
-			// char res[10] = {0,0,0,0,0,0,0,0,0,0};
-			// char cmp[5] = {0,0,0,0,0};
-		
-			// // Matrix multiplication
-			// for(int y = 0; y < 10; y++)
-			// {
-			// 	for(int x = 0; x < 26; x++)
-			// 	{
-			// 		res[y] += in[i-x] * __parity_chk[x][y];
-			// 	}
-				
-			// 	// All operation are modulo 2 (bits): apply a mask to 1
-			// 	res[y] = res[y] & 1;
-			// }
-			
-			// // Check against known syndromes
-
-			// for(int x = 0; x < 5; x++)
-			// {
-			// 	// the matrix index starts at 0, so the +1 is necessary
-			// 	sync = x + 1;
-
-			// 	for(int y = 0; y < 10; y++)
-			// 	{
-			// 		if(res[y] != __syndromes[x][y])
-			// 		{
-			// 			sync = 0;
-			// 			break;
-			// 		}
-			// 	}
-			// }
-
-			// Pre-initialize with none, in case the next block doesnt capture any sync
-			//__last_syndrome = -1;
-
-			// Decrement last seen
-			//__last_seen -= 1;
-
-			//for(int x = 0; x < 5; x++)
+			// We're not (or no longer) synchronized, so lets search for sync
+			//if (d_sync_cntr > 0)
 			//{
-			//	if(cmp[x])
-			//	{
-			//		__last_syndrome = x;
-			//		__last_seen = 26;
-			//		syncd[i] = x;
-			//	}
+			//	// We're still synchronized, so we increment the counter and leave
+			//	d_sync_cntr--;
+			//}
+			//else
+			//{
+			//	d_last_syndrome = -1;
 			//}
 
-			// Tagged passthrough the input to the output
+			out[i] = in[i];
+			syncd[i] = d_last_syndrome;
 
-		//	out[i] = in[i];
-			
-		//}
+		}
 
-		
+		//printf("-- %d, %d, %d", out[noutput_items-1], out[noutput_items], out[noutput_items+1]);
 		
         // Do <+signal processing+>
         // Tell runtime system how many input items we consumed on
