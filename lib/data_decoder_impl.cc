@@ -23,68 +23,52 @@
 #endif
 
 #include <gr_io_signature.h>
-#include "biphase_decoder_impl.h"
+#include "data_decoder_impl.h"
 
 namespace gr {
   namespace fmrds {
 
-    biphase_decoder::sptr
-    biphase_decoder::make()
+    data_decoder::sptr
+    data_decoder::make()
     {
-      return gnuradio::get_initial_sptr (new biphase_decoder_impl());
+      return gnuradio::get_initial_sptr (new data_decoder_impl());
     }
 
     /*
      * The private constructor
      */
-    biphase_decoder_impl::biphase_decoder_impl() : gr_sync_block("biphase_decoder", gr_make_io_signature(2, 2, sizeof (float)), gr_make_io_signature(1, 1, sizeof (float)))
-    {
-      set_history(2);
-      
-      float d_out_bit = 0.0;    // Initial state is 0
-    }
+    data_decoder_impl::data_decoder_impl()
+      : gr_block("data_decoder",
+		      gr_make_io_signature(2, 2, sizeof (char)),
+		      gr_make_io_signature(1, 1, sizeof (char)))
+    {}
 
     /*
      * Our virtual destructor.
      */
-    biphase_decoder_impl::~biphase_decoder_impl()
+    data_decoder_impl::~data_decoder_impl()
     {
-
     }
 
-    int biphase_decoder_impl::work(int noutput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &output_items)
+    void
+    data_decoder_impl::forecast (int noutput_items, gr_vector_int &ninput_items_required)
+    {
+        /* <+forecast+> e.g. ninput_items_required[0,] = noutput_items */
+    }
+
+    int
+    data_decoder_impl::general_work (int noutput_items,
+                       gr_vector_int &ninput_items,
+                       gr_vector_const_void_star &input_items,
+                       gr_vector_void_star &output_items)
     {
         const float *in = (const float *) input_items[0];
-        const float *clk = (const float *) input_items[1];
         float *out = (float *) output_items[0];
 
-		    in += 1; // ensure that i - 1 is valid.
-		    clk += 1;
-
-        for (int i = 0; i < noutput_items; i++)
-		    {
-
-          // In the falling edge of the clock
-          if(clk[i] < clk[i-1])
-          {
-
-            // Check in which edge of the data we're in
-				    // to reconstruct the original BPSK signal
-				    if(in[i] < in[i-1])
-				    {
-              // Falling edge: 1
-              d_out_bit = 1.0;
-				    }
-				    else
-				    {
-              // Rising edge: 0
-              d_out_bit = -1.0;
-				    }
-            
-          }
-
-          out[i] = d_out_bit;
-        } 
+        // Do <+signal processing+>
+        // Tell runtime system how many input items we consumed on
+        // each input stream.
+        consume_each (noutput_items);
 
         // Tell runtime system how many output items we produced.
         return noutput_items;

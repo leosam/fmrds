@@ -30,6 +30,7 @@
 #include "qa_biphase_decoder.h"
 #include "qa_diff_decoder.h"
 #include "qa_sync.h"
+#include "qa_data_decoder.h"
 
 CppUnit::TestSuite *
 qa_fmrds::suite()
@@ -39,6 +40,7 @@ qa_fmrds::suite()
   s->addTest(gr::fmrds::qa_biphase_decoder::suite());
   s->addTest(gr::fmrds::qa_diff_decoder::suite());
   s->addTest(gr::fmrds::qa_sync::suite());
+  s->addTest(gr::fmrds::qa_data_decoder::suite());
 
   return s;
 }

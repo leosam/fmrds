@@ -28,9 +28,6 @@
 namespace gr {
   namespace fmrds {
 
-    float __state = 0.0;        // initial state is 0
-    char __cntr = 0;             // crossings counter 0
-
     div16_ff::sptr
     div16_ff::make()
     {
@@ -45,7 +42,10 @@ namespace gr {
 		      gr_make_io_signature(1, 1, sizeof (float)),
 		      gr_make_io_signature(1, 1, sizeof (float)))
     {
-	set_history(2);
+        set_history(2);
+
+        d_state = 0.0;        // initial state is 0
+        d_cntr = 0;           // crossings counter 0
     }
 
     /*
@@ -72,27 +72,22 @@ namespace gr {
 		
                 if(sign_1 != sign_2)
                 {
-                        __cntr += 1;
+                        d_cntr += 1;
                 }
 
-                if((__cntr == 16) && (__state == 0))
+                if((d_cntr == 16) && (d_state == 0))
                 {
-                        __state = 1.0;
-                        __cntr = 0;
+                        d_state = 1.0;
+                        d_cntr = 0;
                 }
-                else if ((__cntr == 16) && (__state == 1))
+                else if ((d_cntr == 16) && (d_state == 1))
                 {
-                        __state = 0.0;
-                        __cntr = 0;
+                        d_state = 0.0;
+                        d_cntr = 0;
                 }
 
-		//printf("Counter: %d and state: %f \n",__cntr,__state);
-
-                out[i] = __state;
+                out[i] = d_state;
         }
-        // Tell runtime system how many input items we consumed on
-        // each input stream.
-        //consume_each (noutput_items);	
 
         // Tell runtime system how many output items we produced.
         return noutput_items;

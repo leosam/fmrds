@@ -58,7 +58,7 @@ namespace gr {
 		in += 1; // ensure that i - 1 is valid.
 
 		for (int i = 0; i < noutput_items; i++)
-        {
+    {
 			// A bad XOR, but works...
 			if( in[i] == in[i-1] )
 			{
@@ -68,7 +68,7 @@ namespace gr {
 			{
 				out[i] = 1;
 			}
-        }
+    }
 
         // Tell runtime system how many output items we produced.
         return noutput_items;

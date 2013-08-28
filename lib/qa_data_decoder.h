@@ -18,32 +18,29 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_FMRDS_DIV16_FF_IMPL_H
-#define INCLUDED_FMRDS_DIV16_FF_IMPL_H
 
-#include <fmrds/div16_ff.h>
+#ifndef _QA_DATA_DECODER_H_
+#define _QA_DATA_DECODER_H_
 
- namespace gr {
-	namespace fmrds {
+#include <cppunit/extensions/HelperMacros.h>
+#include <cppunit/TestCase.h>
 
-		class div16_ff_impl : public div16_ff
-		{
-		public:
-			div16_ff_impl();
-			~div16_ff_impl();
+namespace gr {
+  namespace fmrds {
 
-			// Where all the action really happens
-			int work(int noutput_items,
-				gr_vector_const_void_star &input_items,
-				gr_vector_void_star &output_items);
+    class qa_data_decoder : public CppUnit::TestCase
+    {
+    public:
+      CPPUNIT_TEST_SUITE(qa_data_decoder);
+      CPPUNIT_TEST(t1);
+      CPPUNIT_TEST_SUITE_END();
 
-		private:
-float d_state;          // initial state
-char d_cntr;              // crossings counter
-};
+    private:
+      void t1();
+    };
 
-} // namespace fmrds
-} // namespace gr
+  } /* namespace fmrds */
+} /* namespace gr */
 
-#endif /* INCLUDED_FMRDS_DIV16_FF_IMPL_H */
+#endif /* _QA_DATA_DECODER_H_ */
 

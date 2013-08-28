@@ -30,6 +30,7 @@ list(APPEND fmrds_sources
     biphase_decoder_impl.cc
     diff_decoder_impl.cc
     sync_impl.cc
+    data_decoder_impl.cc
 )
 
 add_library(gnuradio-fmrds SHARED ${fmrds_sources})
@@ -55,6 +56,7 @@ include_directories(${CPPUNIT_INCLUDE_DIRS})
 list(APPEND test_fmrds_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/test_fmrds.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/qa_fmrds.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/qa_data_decoder.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/qa_sync.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/qa_diff_decoder.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/qa_biphase_decoder.cc

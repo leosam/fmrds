@@ -21,5 +21,6 @@ install(FILES
     fmrds_div16_ff.xml
     fmrds_biphase_decoder.xml
     fmrds_diff_decoder.xml
-    fmrds_sync.xml DESTINATION share/gnuradio/grc/blocks
+    fmrds_sync.xml
+    fmrds_data_decoder.xml DESTINATION share/gnuradio/grc/blocks
 )

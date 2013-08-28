@@ -12,6 +12,7 @@
 #include "fmrds/biphase_decoder.h"
 #include "fmrds/diff_decoder.h"
 #include "fmrds/sync.h"
+#include "fmrds/data_decoder.h"
 %}
 
 
@@ -23,3 +24,5 @@ GR_SWIG_BLOCK_MAGIC2(fmrds, biphase_decoder);
 GR_SWIG_BLOCK_MAGIC2(fmrds, diff_decoder);
 %include "fmrds/sync.h"
 GR_SWIG_BLOCK_MAGIC2(fmrds, sync);
+%include "fmrds/data_decoder.h"
+GR_SWIG_BLOCK_MAGIC2(fmrds, data_decoder);

@@ -18,31 +18,39 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_FMRDS_BIPHASE_DECODER_IMPL_H
-#define INCLUDED_FMRDS_BIPHASE_DECODER_IMPL_H
 
-#include <fmrds/biphase_decoder.h>
+#ifndef INCLUDED_FMRDS_DATA_DECODER_H
+#define INCLUDED_FMRDS_DATA_DECODER_H
+
+#include <fmrds/api.h>
+#include <gr_block.h>
 
 namespace gr {
   namespace fmrds {
 
-    class biphase_decoder_impl : public biphase_decoder
+    /*!
+     * \brief <+description of block+>
+     * \ingroup fmrds
+     *
+     */
+    class FMRDS_API data_decoder : virtual public gr_block
     {
-     private:
-      float d_out_bit;
-
      public:
-      biphase_decoder_impl();
-      ~biphase_decoder_impl();
+      typedef boost::shared_ptr<data_decoder> sptr;
 
-      // Where all the action really happens
-      int work(int noutput_items,
-	       gr_vector_const_void_star &input_items,
-	       gr_vector_void_star &output_items);
+      /*!
+       * \brief Return a shared_ptr to a new instance of fmrds::data_decoder.
+       *
+       * To avoid accidental use of raw pointers, fmrds::data_decoder's
+       * constructor is in a private implementation
+       * class. fmrds::data_decoder::make is the public interface for
+       * creating new instances.
+       */
+      static sptr make();
     };
 
   } // namespace fmrds
 } // namespace gr
 
-#endif /* INCLUDED_FMRDS_BIPHASE_DECODER_IMPL_H */
+#endif /* INCLUDED_FMRDS_DATA_DECODER_H */
 

@@ -45,3 +45,4 @@ GR_ADD_TEST(qa_div16_ff ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_div1
 GR_ADD_TEST(qa_biphase_decoder ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_biphase_decoder.py)
 GR_ADD_TEST(qa_diff_decoder ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_diff_decoder.py)
 GR_ADD_TEST(qa_sync ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_sync.py)
+GR_ADD_TEST(qa_data_decoder ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_data_decoder.py)

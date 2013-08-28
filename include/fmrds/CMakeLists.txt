@@ -25,5 +25,6 @@ install(FILES
     div16_ff.h
     biphase_decoder.h
     diff_decoder.h
-    sync.h DESTINATION include/fmrds
+    sync.h
+    data_decoder.h DESTINATION include/fmrds
 )

@@ -18,32 +18,21 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_FMRDS_DIV16_FF_IMPL_H
-#define INCLUDED_FMRDS_DIV16_FF_IMPL_H
 
-#include <fmrds/div16_ff.h>
+#include "qa_data_decoder.h"
+#include <cppunit/TestAssert.h>
 
- namespace gr {
-	namespace fmrds {
+#include <fmrds/data_decoder.h>
 
-		class div16_ff_impl : public div16_ff
-		{
-		public:
-			div16_ff_impl();
-			~div16_ff_impl();
+namespace gr {
+  namespace fmrds {
 
-			// Where all the action really happens
-			int work(int noutput_items,
-				gr_vector_const_void_star &input_items,
-				gr_vector_void_star &output_items);
+    void
+    qa_data_decoder::t1()
+    {
+        // Put test here
+    }
 
-		private:
-float d_state;          // initial state
-char d_cntr;              // crossings counter
-};
-
-} // namespace fmrds
-} // namespace gr
-
-#endif /* INCLUDED_FMRDS_DIV16_FF_IMPL_H */
+  } /* namespace fmrds */
+} /* namespace gr */
 

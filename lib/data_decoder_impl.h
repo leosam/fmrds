@@ -18,32 +18,34 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_FMRDS_DIV16_FF_IMPL_H
-#define INCLUDED_FMRDS_DIV16_FF_IMPL_H
+#ifndef INCLUDED_FMRDS_DATA_DECODER_IMPL_H
+#define INCLUDED_FMRDS_DATA_DECODER_IMPL_H
 
-#include <fmrds/div16_ff.h>
+#include <fmrds/data_decoder.h>
 
- namespace gr {
-	namespace fmrds {
+namespace gr {
+  namespace fmrds {
 
-		class div16_ff_impl : public div16_ff
-		{
-		public:
-			div16_ff_impl();
-			~div16_ff_impl();
+    class data_decoder_impl : public data_decoder
+    {
+     private:
+      // Nothing to declare in this block.
 
-			// Where all the action really happens
-			int work(int noutput_items,
-				gr_vector_const_void_star &input_items,
-				gr_vector_void_star &output_items);
+     public:
+      data_decoder_impl();
+      ~data_decoder_impl();
 
-		private:
-float d_state;          // initial state
-char d_cntr;              // crossings counter
-};
+      // Where all the action really happens
+      void forecast (int noutput_items, gr_vector_int &ninput_items_required);
 
-} // namespace fmrds
+      int general_work(int noutput_items,
+		       gr_vector_int &ninput_items,
+		       gr_vector_const_void_star &input_items,
+		       gr_vector_void_star &output_items);
+    };
+
+  } // namespace fmrds
 } // namespace gr
 
-#endif /* INCLUDED_FMRDS_DIV16_FF_IMPL_H */
+#endif /* INCLUDED_FMRDS_DATA_DECODER_IMPL_H */
 

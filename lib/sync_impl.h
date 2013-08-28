@@ -41,12 +41,17 @@ namespace gr {
 		       gr_vector_const_void_star &input_items,
 		       gr_vector_void_star &output_items);
 
+      void syndrome_calc(const int* in, int* res);
+
       private:
         // Parity check matrix
         int d_parity_chk[26][10];
 
         // Precalculated syndromes for the check words
         int d_syndromes[50];
+
+        // Check words
+        int d_checks[50];
 
         // Last identified syndrome
         //      0->A, 1->B, 2->C, 3->C', 4->D
@@ -62,6 +67,9 @@ namespace gr {
 
         // Overall counter
         int d_overall;
+
+        // Sync'ed flag
+        int d_syncd;
     };
 
   } // namespace fmrds
