@@ -41,7 +41,13 @@ namespace gr {
 		       gr_vector_const_void_star &input_items,
 		       gr_vector_void_star &output_items);
 
-      void syndrome_calc(const int* in, int* res);
+      int syndrome_calc(const int* in, int* res);
+
+      void error_correction(const int* synd, int* in);
+
+      void remove_offset_word(const int blk, int* in);
+
+      int block_ident(const int* synd);
 
       private:
         // Parity check matrix

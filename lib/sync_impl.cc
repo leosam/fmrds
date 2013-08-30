@@ -139,9 +139,9 @@ namespace gr {
         char *out = (char *) output_items[0];
 		char *syncd = (char *) output_items[1];
 
-		int res[10] = {0,0,0,0,0,0,0,0,0,0};
+		int synd[10] = {0,0,0,0,0,0,0,0,0,0};
 		int input_seq[26] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-		int tmp = 0, val = 0;
+		int blk = 0, val = 0, sum = 0;
 
 
 		for (int i = 0; i < noutput_items; i++)
@@ -153,51 +153,55 @@ namespace gr {
 				input_seq[x] = in[i+x];  // Data from 0 to 15, check from 16 to 25
 			}
 
-			// if (!d_syncd)
-			// {
+			if (!d_syncd)
+			{
+				//
+				// Perform the synchronization as described in
+				// Appendices B and C of the U.S. RBDS Standard - April 1998
+				//
+
 				// Calculate the syndrome for the current input sequence
-				syndrome_calc(&input_seq[0], &res[0]);
+				syndrome_calc(&input_seq[0], &synd[0]);
 				
 				// Check against known syndromes
-				for (int x = 0; x < 5; x++)
-				{
-					if (memcmp(res, &d_syndromes[x * 10], sizeof(res)) == 0)
-					{
-						// We're in presync!
+				blk = sync_impl::block_ident(&synd[0]);
 
-						// Check if we're sync'ed
-						if (d_sync_cntr == 26)
+				if ((blk > -1) && (blk < 5))
+				{
+					// We're in presync!
+
+					// Check if we're sync'ed
+					if (d_sync_cntr == 26)
+					{
+						if ((blk == (d_last_syndrome + 1)) || ((blk == 4) && (d_last_syndrome == 2 )) || ((blk == 3) && (d_last_syndrome == 1 )) || ((blk == 0) && (d_last_syndrome == 4 )))
 						{
-							if ((x == (d_last_syndrome + 1)) || ((x == 4) && (d_last_syndrome == 2 )) || ((x == 3) && (d_last_syndrome == 1 )) || ((x == 0) && (d_last_syndrome == 4 )))
-							{
-								d_syncd = 1;
-							}
-							else
-							{
-								d_syncd = 0;
-							}
+							d_syncd = 1;
 						}
 						else
 						{
 							d_syncd = 0;
-						} 
-
-						// DEBUG CODE:
-						if (d_syncd == 1)
-						{
-							printf(" [ ");
-							for (int k = 0; k < 26; k++)
-							{
-								printf("%d ", input_seq[k]);
-							}	
-							printf("] %d <- %d\n", x, d_last_syndrome);
 						}
-
-						d_last_syndrome = x;
-						d_sync_cntr = 0;
-
-						break;
 					}
+					else
+					{
+						d_syncd = 0;
+					} 
+
+					// DEBUG CODE:
+					if (d_syncd == 1)
+					{
+						printf(" [ ");
+						for (int k = 0; k < 26; k++)
+						{
+							printf("%d ", input_seq[k]);
+						}	
+						printf("] %d <- %d\n", blk, d_last_syndrome);
+					}
+
+					d_last_syndrome = blk;
+					d_sync_cntr = 0;
+
+					break;
 				}
 
 				// lost presync
@@ -207,48 +211,200 @@ namespace gr {
 					//d_syncd = 0;
 				}
 
-			// }
-			// else
-			// {
-			// 	// Check if we're sync'ed
-			// 	if (d_sync_cntr == 26)
-			// 	{
-			//		// TODO: We need to do this for the NEXT block, so we need to know which one it is!
-			// 		for (int x = 0; x < 10; x++)
-			// 		{
-			// 			// Remove the check word
-			// 			input_seq[16+x] = input_seq[16+x] ^ d_checks[(d_last_syndrome * 10)+x];
+			}
+			else
+			{
+				// Check if we're sync'ed
+				if (d_sync_cntr == 26)
+				{
 
-			// 			// Calculate the syndrome for the current input sequence
-			// 			syndrome_calc(&input_seq[0], &res[0]);
-			// 		}
+					//
+					// Perform data decoding as described in
+					// Appendices B (section B.2.2) of the U.S. RBDS Standard - April 1998
+					//
 
-			// 		tmp = 0;
+					if ((d_last_syndrome == 0) || (d_last_syndrome == 3))
+					{
+						blk = d_last_syndrome + 1;
 
-			// 		for (int x = 0; x < 10; x++)
-			// 		{
-			// 			tmp += res[x];
-			// 		}
+						remove_offset_word(blk, &input_seq[0]);
 
-			// 		// If the syndrome equals 0 it means we have a zero error block
-			// 		if (tmp == 0)
-			// 		{
-			// 			printf(" [ ");
-			// 			for (int k = 0; k < 26; k++)
-			// 			{
-			// 				printf("%d ", input_seq[k]);
-			// 			}	
-			// 			printf("] %d <- %d\n", x);
-			// 		}
-			// 		else
-			// 		{
-			// 			d_last_syndrome = -1;
-			// 			d_sync_cntr = 0;
-			// 		}
+						// Now we check the block for error (or try to fix up to 5 consecutive errors)
+						for (int y = 0; y < 5; y++)
+						{
+							// Calculate the syndrome of the block without the offset word to look for channel errors
+							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							{
+								printf(" [ ");
+								for (int k = 0; k < 26; k++)
+								{
+									printf("%d ", input_seq[k]);
+								}	
+								printf("] %d <- %d *\n", blk, d_last_syndrome);
 
-			// 	}
+								d_last_syndrome = blk;
+								d_sync_cntr = 0;
+								break;
+							}
 
-			//}
+							error_correction(&synd[0], &input_seq[0]);
+						}
+
+						if (d_last_syndrome != blk)
+						{
+							printf("Sync lost after block %d\n", d_last_syndrome);
+
+							// We loose sync... :(
+							d_last_syndrome = -1;
+							d_sync_cntr = 0;
+							d_syncd = 0;
+						}
+
+					}
+					else if ((d_last_syndrome == 4))
+					{
+						blk = 0;
+
+						remove_offset_word(blk, &input_seq[0]);
+
+						// Now we check the block for error (or try to fix up to 5 consecutive errors)
+						for (int y = 0; y < 5; y++)
+						{
+							// Calculate the syndrome of the block without the offset word to look for channel errors
+							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							{
+								printf(" [ ");
+								for (int k = 0; k < 26; k++)
+								{
+									printf("%d ", input_seq[k]);
+								}	
+								printf("] %d <- %d *\n", blk, d_last_syndrome);
+
+								d_last_syndrome = blk;
+								d_sync_cntr = 0;
+								break;
+							}
+
+							error_correction(&synd[0], &input_seq[0]);
+						}
+
+						if (d_last_syndrome != blk)
+						{
+							printf("Sync lost after block %d\n", d_last_syndrome);
+
+							// We loose sync... :(
+							d_last_syndrome = -1;
+							d_sync_cntr = 0;
+							d_syncd = 0;
+						}
+					}
+					else if ((d_last_syndrome == 2))
+					{
+						blk = 4;
+
+						remove_offset_word(blk, &input_seq[0]);
+
+						// Now we check the block for error (or try to fix up to 5 consecutive errors)
+						for (int y = 0; y < 5; y++)
+						{
+							// Calculate the syndrome of the block without the offset word to look for channel errors
+							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							{
+								printf(" [ ");
+								for (int k = 0; k < 26; k++)
+								{
+									printf("%d ", input_seq[k]);
+								}	
+								printf("] %d <- %d *\n", blk, d_last_syndrome);
+
+								d_last_syndrome = blk;
+								d_sync_cntr = 0;
+								break;
+							}
+
+							error_correction(&synd[0], &input_seq[0]);
+						}
+
+						if (d_last_syndrome != blk)
+						{
+							printf("Sync lost after block %d\n", d_last_syndrome);
+
+							// We loose sync... :(
+							d_last_syndrome = -1;
+							d_sync_cntr = 0;
+							d_syncd = 0;
+						}
+					}
+					else
+					{
+						blk = 2;
+
+						remove_offset_word(blk, &input_seq[0]);
+
+						// Now we check the block for error (or try to fix up to 5 consecutive errors)
+						for (int y = 0; y < 5; y++)
+						{
+							// Calculate the syndrome of the block without the offset word to look for channel errors
+							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							{
+								printf(" [ ");
+								for (int k = 0; k < 26; k++)
+								{
+									printf("%d ", input_seq[k]);
+								}	
+								printf("] %d <- %d *\n", blk, d_last_syndrome);
+
+								d_last_syndrome = blk;
+								d_sync_cntr = 0;
+								break;
+							}
+
+							error_correction(&synd[0], &input_seq[0]);
+						}
+
+						if (d_last_syndrome != blk)
+						{
+							// Ooops, couldnt decode a 2.. lets try a 3:
+							blk = 3;
+
+							remove_offset_word(blk, &input_seq[0]);
+
+							// Now we check the block for error (or try to fix up to 5 consecutive errors)
+							for (int y = 0; y < 5; y++)
+							{
+								// Calculate the syndrome of the block without the offset word to look for channel errors
+								if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+								{
+									printf(" [ ");
+									for (int k = 0; k < 26; k++)
+									{
+										printf("%d ", input_seq[k]);
+									}	
+									printf("] %d <- %d *\n", blk, d_last_syndrome);
+
+									d_last_syndrome = blk;
+									d_sync_cntr = 0;
+									break;
+								}
+
+								error_correction(&synd[0], &input_seq[0]);
+							}
+
+							if (d_last_syndrome != blk)
+							{
+								printf("Sync lost after block %d\n", d_last_syndrome);
+
+								// We loose sync... :(
+								d_last_syndrome = -1;
+								d_sync_cntr = 0;
+								d_syncd = 0;
+							}
+						}
+					}
+
+				}
+
+			}
 
 			d_sync_cntr++;
 
@@ -263,9 +419,20 @@ namespace gr {
         return noutput_items;
     }
 
-    void sync_impl::syndrome_calc(const int* in, int* res)
-    {
-    	int tmp = 0;
+    int sync_impl::syndrome_calc(const int* in, int* res)
+    {	
+    	/*
+			Calculates the syndrome of a received block as seen in
+			Appendix B of the U.S. RBDS Standard - April 1998
+
+			Input:
+				const int* in 		: the data bit vector (size 26)
+				int* res 			: where the calculated syndrome vector will be written (size 10)
+
+    	*/
+
+    	// TODO: use the shift register implementation to calculate the syndrome... its much faster
+    	int tmp = 0, sum = 0;
 
     	// Syndrome matrix multiplication
 		for (int y = 0; y < 10; y++)
@@ -278,7 +445,136 @@ namespace gr {
 			}
 
 			res[y] = tmp % 2;
+
+			sum += res[y];
 		}
+
+		return sum;
+    }
+
+    int sync_impl::block_ident(const int* synd)
+    {
+    	/*
+			Identifies which block has been received based on the syndrome as seen in
+			Appendix B of the U.S. RBDS Standard - April 1998
+
+			Input:
+				const int* synd : a previously calculated syndrome vector (size 10)
+			Output:
+				int 	 		: the block number (-1 if no block was detected)
+    	*/
+
+    	// Initialized with -1 which means block not identifed...
+    	int block = -1;
+
+    	// Check against known syndromes
+		for (int x = 0; x < 5; x++)
+		{
+			if (memcmp(synd, &d_syndromes[x * 10], sizeof(int) * 10) == 0)
+			{
+				block = x;
+			}
+		}
+
+		return block;
+    }
+
+    void sync_impl::remove_offset_word(const int blk, int* in)
+    {
+  //   	printf(" [ ");
+		// for (int k = 0; k < 26; k++)
+		// {
+		// 	printf("%d ", in[k]);
+		// }	
+		// printf("] before offset removal\n");
+
+    	// Remove the check word
+		for (int x = 0; x < 10; x++)
+		{
+			in[16 + x] = (in[16 + x] + d_checks[(blk * 10) + x]) % 2;
+		}
+    }
+
+    void sync_impl::error_correction(const int* synd, int* in)
+    {
+    	/*
+			Implementation of the error correction as seen in Appendix B of the U.S. RBDS Standard - April 1998
+
+			Corrects one bit at a time in a sequence of up to 5 erroneous bits. If bits are not in sequence,
+			no correction is done. To correct the remainig bits, update the syndrome and call this function again.
+
+			Input:
+				const int* synd : a previously calculated syndrome vector (size 10)
+				int* in 		: the data bit vector (will be updated with the correct bit) (size 26)
+    	*/
+
+    	int synd_reg[10] = {0,0,0,0,0,0,0,0,0,0};
+    	int synd_tmp[10] = {0,0,0,0,0,0,0,0,0,0};
+    	int error_mask[26] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+  //   	printf(" [ ");
+		// for (int k = 0; k < 26; k++)
+		// {
+		// 	printf("%d ", in[k]);
+		// }	
+		// printf("] !\n");
+
+    	// Initializing the syndrome register for initial data correction:
+    	for (int i = 0; i < 10; i++)
+    	{
+    		synd_reg[9 - i] = synd[i];
+    	}
+
+		// printf(" s < ");
+		// for (int k = 0; k < 10; k++)
+		// {
+		// 	printf("%d ", synd_reg[k]);
+		// }	
+		// printf(">\n");
+
+    	// Syndrome matrix multiplication
+		for (int i = 0; i < 26; i++)
+		{
+			// Check to see if there's a bit to correct
+			if (!(synd_reg[0] || synd_reg[1] || synd_reg[2] || synd_reg[3] || synd_reg[4]) && synd_reg[9])
+			{
+				error_mask[i] = synd_reg[9];
+				break;
+			}
+
+			if (i < 16)
+			{
+				// Rotation of the register and xor operations
+				synd_tmp[0] = synd_reg[9];  					synd_tmp[1] = synd_reg[0];  synd_tmp[2] = synd_reg[1];                      synd_tmp[3] = (synd_reg[9] + synd_reg[2]) % 2;  synd_tmp[4] = (synd_reg[9] + synd_reg[3]) % 2;
+				synd_tmp[5] = (synd_reg[9] + synd_reg[4]) % 2;  synd_tmp[6] = synd_reg[5];  synd_tmp[7] = (synd_reg[9] + synd_reg[6]) % 2;  synd_tmp[8] = (synd_reg[9] + synd_reg[7]) % 2;  synd_tmp[9] = synd_reg[8];
+			}
+			else
+			{
+				// Rotation of the register
+				synd_tmp[0] = 0;  			synd_tmp[1] = synd_reg[0];  synd_tmp[2] = synd_reg[1];  synd_tmp[3] = synd_reg[2];  synd_tmp[4] = synd_reg[3];
+				synd_tmp[5] = synd_reg[4];  synd_tmp[6] = synd_reg[5];  synd_tmp[7] = synd_reg[6];  synd_tmp[8] = synd_reg[7];  synd_tmp[9] = synd_reg[8];
+			}
+
+			// Update the register
+			for (int k = 0; k < 10; k++)
+			{
+				synd_reg[k] = synd_tmp[k];
+			}
+
+			// printf(" %d < ", i);
+			// for (int k = 0; k < 10; k++)
+			// {
+			// 	printf("%d ", synd_reg[k]);
+			// }
+			// printf(">\n");
+
+		}
+
+		// Applying the data correction:
+    	for (int i = 0; i < 26; i++)
+    	{
+    		in[i] = error_mask[i] ^ in[i];
+    	}
     }
 
   } /* namespace fmrds */
