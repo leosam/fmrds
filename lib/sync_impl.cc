@@ -171,8 +171,9 @@ namespace gr {
 					// We're in presync!
 
 					// Check if we're sync'ed
-					if (d_sync_cntr == 26)
+					if ((d_sync_cntr == 26) && (d_last_syndrome != -1))
 					{
+						// Were we in presync before?
 						if ((blk == (d_last_syndrome + 1)) || ((blk == 4) && (d_last_syndrome == 2 )) || ((blk == 3) && (d_last_syndrome == 1 )) || ((blk == 0) && (d_last_syndrome == 4 )))
 						{
 							d_syncd = 1;
@@ -191,24 +192,23 @@ namespace gr {
 					if (d_syncd == 1)
 					{
 						printf(" [ ");
-						for (int k = 0; k < 26; k++)
+						for (int k = 0; k < 16; k++)
 						{
 							printf("%d ", input_seq[k]);
+							if (k % 4 == 3) printf(" ");
 						}	
-						printf("] %d <- %d\n", blk, d_last_syndrome);
+						printf("] %d <- %d p\n", blk, d_last_syndrome);
 					}
 
 					d_last_syndrome = blk;
 					d_sync_cntr = 0;
-
-					break;
 				}
 
 				// lost presync
 				if (d_sync_cntr > 26)
 				{
 					d_last_syndrome = -1;
-					//d_syncd = 0;
+					d_syncd = 0;
 				}
 
 			}
@@ -230,17 +230,18 @@ namespace gr {
 						remove_offset_word(blk, &input_seq[0]);
 
 						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 5; y++)
+						for (int y = 0; y < 7; y++)
 						{
 							// Calculate the syndrome of the block without the offset word to look for channel errors
 							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
 							{
 								printf(" [ ");
-								for (int k = 0; k < 26; k++)
+								for (int k = 0; k < 16; k++)
 								{
 									printf("%d ", input_seq[k]);
+									if (k % 4 == 3) printf(" ");
 								}	
-								printf("] %d <- %d *\n", blk, d_last_syndrome);
+								printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
 
 								d_last_syndrome = blk;
 								d_sync_cntr = 0;
@@ -261,24 +262,25 @@ namespace gr {
 						}
 
 					}
-					else if ((d_last_syndrome == 4))
+					else if (d_last_syndrome == 4)
 					{
 						blk = 0;
 
 						remove_offset_word(blk, &input_seq[0]);
 
 						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 5; y++)
+						for (int y = 0; y < 7; y++)
 						{
 							// Calculate the syndrome of the block without the offset word to look for channel errors
 							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
 							{
 								printf(" [ ");
-								for (int k = 0; k < 26; k++)
+								for (int k = 0; k < 16; k++)
 								{
 									printf("%d ", input_seq[k]);
+									if (k % 4 == 3) printf(" ");
 								}	
-								printf("] %d <- %d *\n", blk, d_last_syndrome);
+								printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
 
 								d_last_syndrome = blk;
 								d_sync_cntr = 0;
@@ -298,24 +300,25 @@ namespace gr {
 							d_syncd = 0;
 						}
 					}
-					else if ((d_last_syndrome == 2))
+					else if (d_last_syndrome == 2)
 					{
 						blk = 4;
 
 						remove_offset_word(blk, &input_seq[0]);
 
 						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 5; y++)
+						for (int y = 0; y < 7; y++)
 						{
 							// Calculate the syndrome of the block without the offset word to look for channel errors
 							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
 							{
 								printf(" [ ");
-								for (int k = 0; k < 26; k++)
+								for (int k = 0; k < 16; k++)
 								{
 									printf("%d ", input_seq[k]);
+									if (k % 4 == 3) printf(" ");
 								}	
-								printf("] %d <- %d *\n", blk, d_last_syndrome);
+								printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
 
 								d_last_syndrome = blk;
 								d_sync_cntr = 0;
@@ -342,17 +345,18 @@ namespace gr {
 						remove_offset_word(blk, &input_seq[0]);
 
 						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 5; y++)
+						for (int y = 0; y < 7; y++)
 						{
 							// Calculate the syndrome of the block without the offset word to look for channel errors
 							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
 							{
 								printf(" [ ");
-								for (int k = 0; k < 26; k++)
+								for (int k = 0; k < 16; k++)
 								{
 									printf("%d ", input_seq[k]);
+									if (k % 4 == 3) printf(" ");
 								}	
-								printf("] %d <- %d *\n", blk, d_last_syndrome);
+								printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
 
 								d_last_syndrome = blk;
 								d_sync_cntr = 0;
@@ -367,20 +371,27 @@ namespace gr {
 							// Ooops, couldnt decode a 2.. lets try a 3:
 							blk = 3;
 
+							// Re-isolate the input sequence
+							for (int x = 0; x < 26; x++)
+							{
+								input_seq[x] = in[i+x];  // Data from 0 to 15, check from 16 to 25
+							}
+
 							remove_offset_word(blk, &input_seq[0]);
 
 							// Now we check the block for error (or try to fix up to 5 consecutive errors)
-							for (int y = 0; y < 5; y++)
+							for (int y = 0; y < 7; y++)
 							{
 								// Calculate the syndrome of the block without the offset word to look for channel errors
 								if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
 								{
 									printf(" [ ");
-									for (int k = 0; k < 26; k++)
+									for (int k = 0; k < 16; k++)
 									{
 										printf("%d ", input_seq[k]);
+										if (k % 4 == 3) printf(" ");
 									}	
-									printf("] %d <- %d *\n", blk, d_last_syndrome);
+									printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
 
 									d_last_syndrome = blk;
 									d_sync_cntr = 0;
@@ -464,19 +475,17 @@ namespace gr {
 				int 	 		: the block number (-1 if no block was detected)
     	*/
 
-    	// Initialized with -1 which means block not identifed...
-    	int block = -1;
-
     	// Check against known syndromes
 		for (int x = 0; x < 5; x++)
 		{
 			if (memcmp(synd, &d_syndromes[x * 10], sizeof(int) * 10) == 0)
 			{
-				block = x;
+				return x;
 			}
 		}
 
-		return block;
+		// If nothing is identified, return -1
+		return -1;
     }
 
     void sync_impl::remove_offset_word(const int blk, int* in)
