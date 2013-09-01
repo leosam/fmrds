@@ -28,9 +28,6 @@
 namespace gr {
   namespace fmrds {
 
-    float __state = 0.0;        // initial state is 0
-    char __cntr = 0;            // crossings counter 0
-
     div16::sptr
     div16::make()
     {
@@ -42,10 +39,15 @@ namespace gr {
      */
     div16_impl::div16_impl()
       : gr_sync_block("div16",
-		      gr_make_io_signature(1, 1, sizeof (float)),
+		      gr_make_io_signature(2, 2, sizeof (float)),
 		      gr_make_io_signature(1, 1, sizeof (float)))
     {
 	set_history(2);
+
+    d_state = 0.0;        // initial state is 0
+    d_cntr = 0;           // crossings counter 0
+    d_found_sync = 0;     // Sync is initially set to not found (0)
+
     }
 
     /*
@@ -60,32 +62,37 @@ namespace gr {
 			  gr_vector_const_void_star &input_items,
 			  gr_vector_void_star &output_items)
     {
-        const float *in = (const float *) input_items[0];
+        const float *clk = (const float *) input_items[0];
+        const float *data = (const float *) input_items[1];
         float *out = (float *) output_items[0];
-	in += 1; // ensure that i - 1 is valid.
+	clk += 1; // ensure that i - 1 is valid.
 
 	for (int i = 0; i < noutput_items; i++)
         {
                 int sign_1 = 0;
                 int sign_2 = 0;
 
-                if(in[i] > 0) { sign_1 = 1; }
-                if(in[i-1] > 0) { sign_2 = 1; }
-
-                if(sign_1 != sign_2)
+                if(!d_found_sync && (clk[i] < clk[i-1]) && (data[i] < data[i-1]))
                 {
-                        __cntr += 1;
+                    printf("Clock syncd to data!")
+                    d_found_sync = 1;
                 }
 
-                if((__cntr == 16) && (__state == 0))
+                // Upward crossing
+                if((clk[i] < clk[i-1]) && d_found_sync)
                 {
-                        __state = 1.0;
-                        __cntr = 0;
+                        d_cntr += 1;
                 }
-                else if ((__cntr == 16) && (__state == 1))
+
+                if((__cntr == 8) && (__state == 0))
                 {
-                        __state = 0.0;
-                        __cntr = 0;
+                        d_state = 1.0;
+                        d_cntr = 0;
+                }
+                else if ((__cntr == 8) && (__state == 1))
+                {
+                        d_state = 0.0;
+                        d_cntr = 0;
                 }
 
                 out = &__state;

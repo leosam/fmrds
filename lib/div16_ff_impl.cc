@@ -44,8 +44,10 @@ namespace gr {
     {
         set_history(2);
 
-        d_state = 0.0;        // initial state is 0
-        d_cntr = 0;           // crossings counter 0
+        d_state = 0.0;      // initial state is 0
+        d_cntr = 0;         // crossings counter 0
+        d_found_sync = 0;   // Sync is initially set to not found (0)
+        d_search_sync = 0;  // Sync is initially set to not found (0)
     }
 
     /*
@@ -57,40 +59,36 @@ namespace gr {
 
     int div16_ff_impl::work(int noutput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &output_items)
     {
-        const float *in = (const float *) input_items[0];
+        const float *clk = (const float *) input_items[0];
         float *out = (float *) output_items[0];
 		
-		in += 1; // ensure that i - 1 is valid.
+		clk += 1; // ensure that i - 1 is valid.
 
 		for (int i = 0; i < noutput_items; i++)
         {
-                int sign_1 = 0;
-                int sign_2 = 0;
+            
+            // Downward crossing detector
+            if(sgn(clk[i]) < sgn(clk[i-1])) //&& d_found_sync)
+            {
+                    d_cntr += 1;
+            }
 
-                if(in[i] > 0) { sign_1 = 1; }
-                if(in[i-1] > 0) { sign_2 = 1; }
-		
-                if(sign_1 != sign_2)
-                {
-                        d_cntr += 1;
-                }
+            if(d_cntr == 8)
+            {
+                    d_state = float(char(d_state) ^ 1);
+                    d_cntr = 0;
+            }
 
-                if((d_cntr == 16) && (d_state == 0))
-                {
-                        d_state = 1.0;
-                        d_cntr = 0;
-                }
-                else if ((d_cntr == 16) && (d_state == 1))
-                {
-                        d_state = 0.0;
-                        d_cntr = 0;
-                }
-
-                out[i] = d_state;
+            out[i] = d_state;
         }
 
         // Tell runtime system how many output items we produced.
         return noutput_items;
+    }
+
+    int div16_ff_impl::sgn(float val)
+    {
+        return (float(0) < val) - (val < float(0));
     }
 
   } /* namespace fmrds */

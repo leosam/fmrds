@@ -37,11 +37,17 @@ namespace gr {
     /*
      * The private constructor
      */
-    biphase_decoder_impl::biphase_decoder_impl() : gr_sync_block("biphase_decoder", gr_make_io_signature(2, 2, sizeof (float)), gr_make_io_signature(1, 1, sizeof (float)))
+    biphase_decoder_impl::biphase_decoder_impl() : gr_sync_block("biphase_decoder", gr_make_io_signature(2, 2, sizeof (float)), gr_make_io_signature(2, 2, sizeof (float)))
     {
-      set_history(2);
+      set_history(244);         // To accomodate for clock sync slips
       
-      float d_out_bit = 0.0;    // Initial state is 0
+      d_out_bit = 0.0;    // Initial state is 0
+
+      // Sync machine variables
+      d_offset = 0;
+      d_offset_cntr = 0;
+      d_syncd = -1;
+      d_resync_cntr = 0;
     }
 
     /*
@@ -57,16 +63,33 @@ namespace gr {
         const float *in = (const float *) input_items[0];
         const float *clk = (const float *) input_items[1];
         float *out = (float *) output_items[0];
+        float *s_clk = (float *) output_items[1];
 
-		    in += 1; // ensure that i - 1 is valid.
-		    clk += 1;
+		    in += 244; // ensure that i - 1 is valid.
+		    clk += 244;
 
         for (int i = 0; i < noutput_items; i++)
 		    {
 
-          // In the falling edge of the clock
-          if(clk[i] < clk[i-1])
+          // Update the offset timer
+          if (d_syncd == 0) d_offset_cntr++;
+
+          // Sync offset timer stop
+          if ((d_syncd == 0) && (sgn(in[i]) > sgn(in[i-1])))
           {
+            d_offset = d_offset_cntr;
+            d_syncd = 1;
+            printf("Sync offset of %d\n", d_offset);
+          }
+
+          // In the falling edge of the clock
+          if(clk[(i - d_offset)] < clk[(i - d_offset)-1])
+          {
+            if (d_syncd != 1)
+            {
+              d_offset_cntr = 0;
+              d_syncd = 0;       // Start offset timer start
+            }
 
             // Check in which edge of the data we're in
 				    // to reconstruct the original BPSK signal
@@ -83,11 +106,28 @@ namespace gr {
             
           }
 
+          // If the times goes off before we get a sync, restart...
+          if (d_offset_cntr > 243) d_syncd = -1;
+
+          // Every number of input samples, resync
+          if (++d_resync_cntr == 10000000)
+          {
+            d_resync_cntr = 0;
+            d_offset_cntr = 0;
+            d_syncd = -1;
+          }
+
           out[i] = d_out_bit;
+          s_clk[i] = clk[(i - d_offset)];
         } 
 
         // Tell runtime system how many output items we produced.
         return noutput_items;
+    }
+
+    int biphase_decoder_impl::sgn(float val)
+    {
+        return (float(0) < val) - (val < float(0));
     }
 
   } /* namespace fmrds */

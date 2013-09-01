@@ -16,4 +16,8 @@
     <name>out</name>
     <type>float</type>
   </source>
+  <source>
+    <name>clk</name>
+    <type>float</type>
+  </source>
 </block>

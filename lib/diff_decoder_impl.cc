@@ -59,16 +59,19 @@ namespace gr {
 
 		for (int i = 0; i < noutput_items; i++)
     {
-			// A bad XOR, but works...
-			if( in[i] == in[i-1] )
-			{
-				out[i] = 0;
-			}
-			else
-			{
-				out[i] = 1;
-			}
+			// // A bad XOR, but works...
+			// if( in[i] == in[i-1] )
+			// {
+			// 	out[i] = 0;
+			// }
+			// else
+			// {
+			// 	out[i] = 1;
+			// }
+
+      out[i] = in[i] ^ in[i-1];
     }
+
 
         // Tell runtime system how many output items we produced.
         return noutput_items;

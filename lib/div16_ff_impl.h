@@ -37,9 +37,14 @@
 				gr_vector_const_void_star &input_items,
 				gr_vector_void_star &output_items);
 
+			// sign function
+			int sgn(float val);
+
 		private:
-float d_state;          // initial state
-char d_cntr;              // crossings counter
+		float d_state;          // Initial state
+		char d_cntr;            // Crossings counter
+		int d_found_sync;		// Sync found flag
+		int d_search_sync;		// Sync found flag
 };
 
 } // namespace fmrds

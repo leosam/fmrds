@@ -30,6 +30,10 @@ namespace gr {
     {
      private:
       float d_out_bit;
+      int d_offset;
+      int d_offset_cntr;
+      int d_syncd;
+      long long int d_resync_cntr;
 
      public:
       biphase_decoder_impl();
@@ -39,6 +43,9 @@ namespace gr {
       int work(int noutput_items,
 	       gr_vector_const_void_star &input_items,
 	       gr_vector_void_star &output_items);
+
+      // sign function
+      int sgn(float val);
     };
 
   } // namespace fmrds
