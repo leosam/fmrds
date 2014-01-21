@@ -34,7 +34,7 @@ list(APPEND fmrds_sources
 )
 
 add_library(gnuradio-fmrds SHARED ${fmrds_sources})
-target_link_libraries(gnuradio-fmrds ${Boost_LIBRARIES} ${GRUEL_LIBRARIES} ${GNURADIO_CORE_LIBRARIES})
+target_link_libraries(gnuradio-fmrds ${Boost_LIBRARIES} ${GNURADIO_RUNTIME_LIBRARIES})
 set_target_properties(gnuradio-fmrds PROPERTIES DEFINE_SYMBOL "gnuradio_fmrds_EXPORTS")
 
 ########################################################################
@@ -67,7 +67,7 @@ add_executable(test-fmrds ${test_fmrds_sources})
 
 target_link_libraries(
   test-fmrds
-  ${GNURADIO_CORE_LIBRARIES}
+  ${GNURADIO_RUNTIME_LIBRARIES}
   ${Boost_LIBRARIES}
   ${CPPUNIT_LIBRARIES}
   gnuradio-fmrds

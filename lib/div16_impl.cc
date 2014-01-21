@@ -22,7 +22,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "div16_impl.h"
 
 namespace gr {
@@ -38,9 +38,9 @@ namespace gr {
      * The private constructor
      */
     div16_impl::div16_impl()
-      : gr_sync_block("div16",
-		      gr_make_io_signature(2, 2, sizeof (float)),
-		      gr_make_io_signature(1, 1, sizeof (float)))
+      : gr::sync_block("div16",
+		      gr::io_signature::make(2, 2, sizeof (float)),
+		      gr::io_signature::make(1, 1, sizeof (float)))
     {
 	set_history(2);
 
@@ -59,8 +59,8 @@ namespace gr {
 
     int
     div16_impl::work(int noutput_items,
-			  gr_vector_const_void_star &input_items,
-			  gr_vector_void_star &output_items)
+			  gr::vector_const_void_star &input_items,
+			  gr::vector_void_star &output_items)
     {
         const float *clk = (const float *) input_items[0];
         const float *data = (const float *) input_items[1];

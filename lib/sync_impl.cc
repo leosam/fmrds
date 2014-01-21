@@ -22,7 +22,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "sync_impl.h"
 
 #include <stdio.h>
@@ -39,7 +39,7 @@ namespace gr {
     /*
      * The private constructor
      */
-    sync_impl::sync_impl() : gr_block("sync", gr_make_io_signature(1, 1, sizeof (char)), gr_make_io_signature(2, 2, sizeof (char)))
+    sync_impl::sync_impl() : gr::block("sync", gr::io_signature::make(1, 1, sizeof (char)), gr::io_signature::make(2, 2, sizeof (char)))
     {
 		// Size of a group
     	set_history(26);

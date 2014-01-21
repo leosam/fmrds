@@ -22,7 +22,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "diff_decoder_impl.h"
 
 namespace gr {
@@ -38,7 +38,7 @@ namespace gr {
      * The private constructor
      */
     diff_decoder_impl::diff_decoder_impl()
-      : gr_sync_block("diff_decoder", gr_make_io_signature(1, 1, sizeof (char)), gr_make_io_signature(1, 1, sizeof (char)))
+      : gr::sync_block("diff_decoder", gr::io_signature::make(1, 1, sizeof (char)), gr::io_signature::make(1, 1, sizeof (char)))
     {
     	set_history(2);
     }

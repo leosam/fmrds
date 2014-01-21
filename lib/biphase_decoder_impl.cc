@@ -22,7 +22,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "biphase_decoder_impl.h"
 
 namespace gr {
@@ -37,7 +37,7 @@ namespace gr {
     /*
      * The private constructor
      */
-    biphase_decoder_impl::biphase_decoder_impl() : gr_sync_block("biphase_decoder", gr_make_io_signature(2, 2, sizeof (float)), gr_make_io_signature(2, 2, sizeof (float)))
+    biphase_decoder_impl::biphase_decoder_impl() : gr::sync_block("biphase_decoder", gr::io_signature::make(2, 2, sizeof (float)), gr::io_signature::make(2, 2, sizeof (float)))
     {
       set_history(244);         // To accomodate for clock sync slips
       
@@ -74,7 +74,7 @@ namespace gr {
           // Update the offset timer
           if (d_syncd == 0) d_offset_cntr++;
 
-          // Sync offset timer stop
+          // Sync offset timer stop at an upward zero crossing
           if ((d_syncd == 0) && (sgn(in[i]) > sgn(in[i-1])))
           {
             d_offset = d_offset_cntr;
@@ -110,11 +110,24 @@ namespace gr {
           if (d_offset_cntr > 243) d_syncd = -1;
 
           // Every number of input samples, resync
-          if (++d_resync_cntr == 10000000)
+          /*if (++d_resync_cntr == 10000000)
           {
             d_resync_cntr = 0;
             d_offset_cntr = 0;
             d_syncd = -1;
+          }*/
+
+          // Every number of input samples, resync
+          if (++d_resync_cntr == 244*100)
+          {
+            d_resync_cntr = 0;
+            
+            if ((sgn(in[i]) > sgn(in[i-1])))
+            {
+              d_offset = d_offset_cntr;
+              d_syncd = 1;
+              printf("Sync offset of %d\n", d_offset);
+            }
           }
 
           out[i] = d_out_bit;

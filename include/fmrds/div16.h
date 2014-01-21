@@ -23,7 +23,7 @@
 #define INCLUDED_FMRDS_DIV16_H
 
 #include <fmrds/api.h>
-#include <gr_sync_block.h>
+#include <gnuradio/sync_block.h>
 
 namespace gr {
   namespace fmrds {
@@ -33,7 +33,7 @@ namespace gr {
      * \ingroup fmrds
      *
      */
-    class FMRDS_API div16 : virtual public gr_sync_block
+    class FMRDS_API div16 : virtual public gr::sync_block
     {
      public:
       typedef boost::shared_ptr<div16> sptr;

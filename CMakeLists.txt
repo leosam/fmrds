@@ -83,8 +83,7 @@ set(GRC_BLOCKS_DIR      ${GR_PKG_DATA_DIR}/grc/blocks)
 ########################################################################
 # Find gnuradio build dependencies
 ########################################################################
-find_package(Gruel)
-find_package(GnuradioCore)
+find_package(Gnuradio)
 find_package(CppUnit)
 
 # To run a more advanced search for GNU Radio and it's components and
@@ -95,12 +94,8 @@ find_package(CppUnit)
 # set(GR_REQUIRED_COMPONENTS CORE BLOCKS FILTER ...)
 # find_package(Gnuradio "version")
 
-if(NOT GRUEL_FOUND)
-    message(FATAL_ERROR "Gruel required to compile fmrds")
-endif()
-
-if(NOT GNURADIO_CORE_FOUND)
-    message(FATAL_ERROR "GnuRadio Core required to compile fmrds")
+if(NOT GNURADIO_RUNTIME_FOUND)
+    message(FATAL_ERROR "GnuRadio Runtime required to compile fmrds")
 endif()
 
 if(NOT CPPUNIT_FOUND)
@@ -113,16 +108,14 @@ endif()
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${Boost_INCLUDE_DIRS}
-    ${GRUEL_INCLUDE_DIRS}
     ${CPPUNIT_INCLUDE_DIRS}
-    ${GNURADIO_CORE_INCLUDE_DIRS}
+    ${GNURADIO_RUNTIME_INCLUDE_DIRS}
 )
 
 link_directories(
     ${Boost_LIBRARY_DIRS}
-    ${GRUEL_LIBRARY_DIRS}
     ${CPPUNIT_LIBRARY_DIRS}
-    ${GNURADIO_CORE_LIBRARY_DIRS}
+    ${GNURADIO_RUNTIME_LIBRARY_DIRS}
 )
 
 # Set component parameters

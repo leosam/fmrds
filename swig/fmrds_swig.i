@@ -1,10 +1,6 @@
-/* -*- c++ -*- */
-
 #define FMRDS_API
 
-%include "gnuradio.i"			// the common stuff
-
-//load generated python docstrings
+%include <gnuradio.i>
 %include "fmrds_swig_doc.i"
 
 %{

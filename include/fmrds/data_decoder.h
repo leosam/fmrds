@@ -23,7 +23,7 @@
 #define INCLUDED_FMRDS_DATA_DECODER_H
 
 #include <fmrds/api.h>
-#include <gr_block.h>
+#include <gnuradio/block.h>
 
 namespace gr {
   namespace fmrds {
@@ -33,7 +33,7 @@ namespace gr {
      * \ingroup fmrds
      *
      */
-    class FMRDS_API data_decoder : virtual public gr_block
+    class FMRDS_API data_decoder : virtual public gr::block
     {
      public:
       typedef boost::shared_ptr<data_decoder> sptr;

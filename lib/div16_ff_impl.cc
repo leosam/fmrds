@@ -22,7 +22,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "div16_ff_impl.h"
 
 namespace gr {
@@ -38,9 +38,9 @@ namespace gr {
      * The private constructor
      */
     div16_ff_impl::div16_ff_impl()
-      : gr_sync_block("div16_ff",
-		      gr_make_io_signature(1, 1, sizeof (float)),
-		      gr_make_io_signature(1, 1, sizeof (float)))
+      : gr::sync_block("div16_ff",
+		      gr::io_signature::make(1, 1, sizeof (float)),
+		      gr::io_signature::make(1, 1, sizeof (float)))
     {
         set_history(2);
 

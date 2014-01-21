@@ -22,7 +22,7 @@
 #include "config.h"
 #endif
 
-#include <gr_io_signature.h>
+#include <gnuradio/io_signature.h>
 #include "data_decoder_impl.h"
 
 namespace gr {
@@ -38,9 +38,9 @@ namespace gr {
      * The private constructor
      */
     data_decoder_impl::data_decoder_impl()
-      : gr_block("data_decoder",
-		      gr_make_io_signature(2, 2, sizeof (char)),
-		      gr_make_io_signature(1, 1, sizeof (char)))
+      : gr::block("data_decoder",
+		      gr::io_signature::make(2, 2, sizeof (char)),
+		      gr::io_signature::make(1, 1, sizeof (char)))
     {}
 
     /*

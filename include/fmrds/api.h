@@ -22,7 +22,7 @@
 #ifndef INCLUDED_FMRDS_API_H
 #define INCLUDED_FMRDS_API_H
 
-#include <gruel/attributes.h>
+#include <gnuradio/attributes.h>
 
 #ifdef gnuradio_fmrds_EXPORTS
 #  define FMRDS_API __GR_ATTR_EXPORT
