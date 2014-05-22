@@ -24,6 +24,7 @@
 
 #include <fmrds/api.h>
 #include <gnuradio/sync_block.h>
+#include <stdio.h>
 
 namespace gr {
   namespace fmrds {
