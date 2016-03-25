@@ -74,18 +74,25 @@ namespace gr {
           // Update the offset timer
           if (d_syncd == 0) d_offset_cntr++;
 
-          // Sync offset timer stop at an upward zero crossing
-          if ((d_syncd == 0) && (sgn(in[i]) > sgn(in[i-1])))
+          // Detect an upward zero crossing
+          if ((d_syncd == 0) && (sgn(in[i]) > sgn(in[i-10])))
+          {
+            d_syncd = 1;
+            printf(".\n");
+          }
+
+          // Sync offset timer stop at a downward zero crossing
+          if ((d_syncd == 1) && (sgn(in[i]) < sgn(in[i-10])))
           {
             d_offset = d_offset_cntr;
-            d_syncd = 1;
+            d_syncd = 2;
             printf("Sync offset of %d\n", d_offset);
           }
 
           // In the falling edge of the clock
           if(clk[(i - d_offset)] < clk[(i - d_offset)-1])
           {
-            if (d_syncd != 1)
+            if (d_syncd < 0)
             {
               d_offset_cntr = 0;
               d_syncd = 0;       // Start offset timer start
@@ -93,16 +100,19 @@ namespace gr {
 
             // Check in which edge of the data we're in
 				    // to reconstruct the original BPSK signal
-				    if(in[i] < in[i-1])
-				    {
-              // Falling edge: 1
-              d_out_bit = 1.0;
-				    }
-				    else
-				    {
-              // Rising edge: 0
-              d_out_bit = -1.0;
-				    }
+				    if (d_syncd == 2)
+            {
+              if(in[i] < in[i-10])
+				      {
+                // Falling edge: 1
+                d_out_bit = 1.0;
+				      }
+				      else
+				      {
+                // Rising edge: 0
+                d_out_bit = -1.0;
+				      }
+            }
             
           }
 
@@ -118,17 +128,17 @@ namespace gr {
           }*/
 
           // Every number of input samples, resync
-          if (++d_resync_cntr == 244*100)
+          /*if (++d_resync_cntr == 244*10000)
           {
             d_resync_cntr = 0;
-            
+
             if ((sgn(in[i]) > sgn(in[i-1])))
             {
               d_offset = d_offset_cntr;
               d_syncd = 1;
-              printf("Sync offset of %d\n", d_offset);
+              printf("Resync offset of %d\n", d_offset);
             }
-          }
+          }*/
 
           out[i] = d_out_bit;
           s_clk[i] = clk[(i - d_offset)];
