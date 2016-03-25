@@ -43,11 +43,13 @@ namespace gr {
 
       int syndrome_calc(const int* in, int* res);
 
-      void error_correction(const int* synd, int* in);
+      int error_correction(const int* synd, int* in);
 
       void remove_offset_word(const int blk, int* in);
 
       int block_ident(const int* synd);
+
+      int decode(const int blk, const int* in, int* synd, int* out);
 
       private:
         // Parity check matrix

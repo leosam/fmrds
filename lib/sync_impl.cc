@@ -45,7 +45,7 @@ namespace gr {
     	set_history(26);
     	//set_output_multiple(26);
 
-    	// Pparity check matrix
+    	// Parity check matrix
 		//     This is used for syndrome calculation
 		//     and syncronization
     	int pchk[26][10] =  {{1,0,0,0,0,0,0,0,0,0},
@@ -141,7 +141,9 @@ namespace gr {
 
 		int synd[10] = {0,0,0,0,0,0,0,0,0,0};
 		int input_seq[26] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+		int decoded_seq[26] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 		int blk = 0, val = 0, sum = 0;
+		int lost_sync = 1;
 
 
 		for (int i = 0; i < noutput_items; i++)
@@ -164,7 +166,7 @@ namespace gr {
 				syndrome_calc(&input_seq[0], &synd[0]);
 				
 				// Check against known syndromes
-				blk = sync_impl::block_ident(&synd[0]);
+				blk = block_ident(&synd[0]);
 
 				if ((blk > -1) && (blk < 5))
 				{
@@ -181,7 +183,10 @@ namespace gr {
 						else
 						{
 							d_syncd = 0;
+							printf("x\n");
+
 						}
+						//printf("seen: %d pre?: %d \n", d_last_syndrome, d_syncd);
 					}
 					else
 					{
@@ -198,11 +203,14 @@ namespace gr {
 						// 	if (k % 4 == 3) printf(" ");
 						// }	
 						// printf("] %d <- %d p\n", blk, d_last_syndrome);
-						printf("p %d \n", blk);
+						printf("psyn: %d \n", blk);
+					}
+					else
+					{
+						d_last_syndrome = blk;
+						d_sync_cntr = 0;
 					}
 
-					d_last_syndrome = blk;
-					d_sync_cntr = 0;
 				}
 
 				// lost presync
@@ -213,7 +221,8 @@ namespace gr {
 				}
 
 			}
-			else
+			//else 
+			if (d_syncd)
 			{
 				// Check if we're sync'ed
 				if (d_sync_cntr == 26)
@@ -224,215 +233,142 @@ namespace gr {
 					// Appendices B (section B.2.2) of the U.S. RBDS Standard - April 1998
 					//
 
+					// This is to be changed if a block is correctly decoded
+					lost_sync = 1;
+
+					// Re-initialize the decoded sequence
+					for (int x = 0; x < 26; x++)
+					{
+						decoded_seq[x] = 0;  // Data from 0 to 15, check from 16 to 25
+					}
+
+					// We're synchronized so we can go ahead and try to decode the next block 
+					// based on the order: A -> B -> C (or C') -> D
 					if ((d_last_syndrome == 0) || (d_last_syndrome == 3))
 					{
 						blk = d_last_syndrome + 1;
 
-						remove_offset_word(blk, &input_seq[0]);
-
-						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 6; y++)
+						printf("decd: %d \n", blk);
+						// Ok, now lets try to decode it:
+						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
 						{
-							// Calculate the syndrome of the block without the offset word to look for channel errors
-							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							printf("[");
+							for (int k = 0; k < 16; k+=4)
 							{
-								// printf(" [ ");
-								// for (int k = 0; k < 16; k++)
-								// {
-								// 	printf("%d ", input_seq[k]);
-								// 	if (k % 4 == 3) printf(" ");
-								// }	
-								// printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
-								// if (blk == 4)
-								// {
-								// 	printf("* \n");
-								// }
-								// else
-								// {
-								// 	printf("%d (%d) ", blk, y);
-								// }
+								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+								printf("%X", hex);
+								if (k % 4 == 3) printf(" ");
+							}	
+							printf("] %d <- %d\n", blk, d_last_syndrome);
 
-								d_last_syndrome = blk;
-								d_sync_cntr = 0;
-								break;
-							}
-
-							error_correction(&synd[0], &input_seq[0]);
-						}
-
-						if (d_last_syndrome != blk)
-						{
-							//printf("Sync lost after block %d\n", d_last_syndrome);
-							printf("x\n\n");
-
-							// We loose sync... :(
-							d_last_syndrome = -1;
+							d_last_syndrome = blk;
 							d_sync_cntr = 0;
-							d_syncd = 0;
+							lost_sync = 0;
 						}
-
 					}
 					else if (d_last_syndrome == 4)
 					{
 						blk = 0;
 
-						remove_offset_word(blk, &input_seq[0]);
-
-						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 6; y++)
+						printf("decd: %d \n", blk);
+						// Ok, now lets try to decode it:
+						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
 						{
-							// Calculate the syndrome of the block without the offset word to look for channel errors
-							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							printf("[");
+							for (int k = 0; k < 16; k+=4)
 							{
-								printf("[");
-								for (int k = 0; k < 16; k+=4)
-								{
-									int hex = input_seq[k]*8 + input_seq[k+1]*4 + input_seq[k+2]*2 + input_seq[k+3]*1; 
-									printf("%X", hex);
-									if (k % 4 == 3) printf(" ");
-								}	
-								//printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
-								printf("] \n");
+								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+								printf("%X", hex);
+								if (k % 4 == 3) printf(" ");
+							}	
+							printf("] %d <- %d\n", blk, d_last_syndrome);
 
-								d_last_syndrome = blk;
-								d_sync_cntr = 0;
-								break;
-							}
-
-							error_correction(&synd[0], &input_seq[0]);
-						}
-
-						if (d_last_syndrome != blk)
-						{
-							//printf("Sync lost after block %d\n", d_last_syndrome);
-							printf("x\n\n");
-
-							// We loose sync... :(
-							d_last_syndrome = -1;
+							d_last_syndrome = blk;
 							d_sync_cntr = 0;
-							d_syncd = 0;
+							lost_sync = 0;
 						}
 					}
 					else if (d_last_syndrome == 2)
 					{
 						blk = 4;
 
-						remove_offset_word(blk, &input_seq[0]);
-
-						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 6; y++)
+						printf("decd: %d \n", blk);
+						// Ok, now lets try to decode it:
+						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
 						{
-							// Calculate the syndrome of the block without the offset word to look for channel errors
-							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							printf("[");
+							for (int k = 0; k < 16; k+=4)
 							{
-								// printf(" [ ");
-								// for (int k = 0; k < 16; k++)
-								// {
-								// 	printf("%d ", input_seq[k]);
-								// 	if (k % 4 == 3) printf(" ");
-								// }	
-								// printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
-								//printf("%d (%d)\n", blk, y);
+								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+								printf("%X", hex);
+								if (k % 4 == 3) printf(" ");
+							}	
+							printf("] %d <- %d\n", blk, d_last_syndrome);
 
-								d_last_syndrome = blk;
-								d_sync_cntr = 0;
-								break;
-							}
-
-							error_correction(&synd[0], &input_seq[0]);
-						}
-
-						if (d_last_syndrome != blk)
-						{
-							//printf("Sync lost after block %d\n", d_last_syndrome);
-							printf("x\n\n");
-
-							// We loose sync... :(
-							d_last_syndrome = -1;
+							d_last_syndrome = blk;
 							d_sync_cntr = 0;
-							d_syncd = 0;
+							lost_sync = 0;
 						}
 					}
 					else
 					{
 						blk = 2;
 
-						remove_offset_word(blk, &input_seq[0]);
-
-						// Now we check the block for error (or try to fix up to 5 consecutive errors)
-						for (int y = 0; y < 6; y++)
+						printf("decd: %d \n", blk);
+						// Ok, now lets try to decode it:
+						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
 						{
-							// Calculate the syndrome of the block without the offset word to look for channel errors
-							if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+							printf("[");
+							for (int k = 0; k < 16; k+=4)
 							{
-								// printf(" [ ");
-								// for (int k = 0; k < 16; k++)
-								// {
-								// 	printf("%d ", input_seq[k]);
-								// 	if (k % 4 == 3) printf(" ");
-								// }	
-								// printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
-								//printf("%d (%d) ", blk, y);
+								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+								printf("%X", hex);
+								if (k % 4 == 3) printf(" ");
+							}	
+							printf("] %d <- %d\n", blk, d_last_syndrome);
 
-								d_last_syndrome = blk;
-								d_sync_cntr = 0;
-								break;
-							}
-
-							error_correction(&synd[0], &input_seq[0]);
+							d_last_syndrome = blk;
+							d_sync_cntr = 0;
+							lost_sync = 0;
 						}
-
-						if (d_last_syndrome != blk)
+						else
 						{
 							// Ooops, couldnt decode a 2.. lets try a 3:
 							blk = 3;
 
-							// Re-isolate the input sequence
-							for (int x = 0; x < 26; x++)
+							printf("decd: %d \n", blk);
+							// Ok, now lets try to decode it:
+							if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
 							{
-								input_seq[x] = in[i+x];  // Data from 0 to 15, check from 16 to 25
-							}
-
-							remove_offset_word(blk, &input_seq[0]);
-
-							// Now we check the block for error (or try to fix up to 5 consecutive errors)
-							for (int y = 0; y < 6; y++)
-							{
-								// Calculate the syndrome of the block without the offset word to look for channel errors
-								if (syndrome_calc(&input_seq[0], &synd[0]) == 0)
+								printf("[");
+								for (int k = 0; k < 16; k+=4)
 								{
-									// printf(" [ ");
-								// for (int k = 0; k < 16; k++)
-								// {
-								// 	printf("%d ", input_seq[k]);
-								// 	if (k % 4 == 3) printf(" ");
-								// }	
-								// printf("] %d <- %d * (%d)\n", blk, d_last_syndrome, y);
-								//printf("%d (%d) ", blk, y);
+									int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+									printf("%X", hex);
+									if (k % 4 == 3) printf(" ");
+								}	
+								printf("] %d <- %d\n", blk, d_last_syndrome);
 
-									d_last_syndrome = blk;
-									d_sync_cntr = 0;
-									break;
-								}
-
-								error_correction(&synd[0], &input_seq[0]);
-							}
-
-							if (d_last_syndrome != blk)
-							{
-								//printf("Sync lost after block %d\n", d_last_syndrome);
-								printf("x\n\n");
-
-								// We loose sync... :(
-								d_last_syndrome = -1;
+								d_last_syndrome = blk;
 								d_sync_cntr = 0;
-								d_syncd = 0;
+								lost_sync = 0;
 							}
+
 						}
+
 					}
 
-				}
+					if (lost_sync)
+					{
+						//printf("Sync lost after block %d\n", d_last_syndrome);
+						printf("xx\n\n");
 
+						// We loose sync... :(
+						d_last_syndrome = -1;
+						d_sync_cntr = 0;
+						d_syncd = 0;
+					}
+				}
 			}
 
 			d_sync_cntr++;
@@ -467,7 +403,6 @@ namespace gr {
 
     	*/
 
-    	// TODO: use the shift register implementation to calculate the syndrome... its much faster
     	int tmp = 0, sum = 0;
 
     	// Syndrome matrix multiplication
@@ -482,9 +417,11 @@ namespace gr {
 
 			res[y] = tmp % 2;
 
-			sum += res[y];
+			// Accumulate the number of observed errors ("1"s after the matrix multiplication)
+			sum += res[y]; 
 		}
 
+		// Return the error count
 		return sum;
     }
 
@@ -505,6 +442,22 @@ namespace gr {
 		{
 			if (memcmp(synd, &d_syndromes[x * 10], sizeof(int) * 10) == 0)
 			{
+				// printf("c-synd [ ");
+				// for (int k = 0; k < 10; k++)
+				// {
+				// 	printf(" %d ", synd[k]);
+				// 	//if (k % 4 == 3) printf(" ");
+				// }	
+				// printf("]\n");
+
+				// printf("v-synd [ ");
+				// for (int k = 0; k < 10; k++)
+				// {
+				// 	printf(" %d ", d_syndromes[(x * 10)+k]);
+				// 	//if (k % 4 == 3) printf(" ");
+				// }	
+				// printf("]\n");
+
 				return x;
 			}
 		}
@@ -515,101 +468,330 @@ namespace gr {
 
     void sync_impl::remove_offset_word(const int blk, int* in)
     {
-  //   	printf(" [ ");
-		// for (int k = 0; k < 26; k++)
-		// {
-		// 	printf("%d ", in[k]);
-		// }	
-		// printf("] before offset removal\n");
+    	printf(" [ ");
+		for (int k = 0; k < 26; k++)
+		{
+			printf("%d ", in[k]);
+		}	
+		printf("] before offset removal, blk: %d\n", blk);
 
     	// Remove the check word
 		for (int x = 0; x < 10; x++)
 		{
 			in[16 + x] = (in[16 + x] + d_checks[(blk * 10) + x]) % 2;
 		}
+
+		printf(" [ ");
+		for (int k = 0; k < 26; k++)
+		{
+			printf("%d ", in[k]);
+		}	
+		printf("] after offset removal, blk: %d\n", blk);
     }
 
-    void sync_impl::error_correction(const int* synd, int* in)
+    int sync_impl::decode(const int blk, const int* in, int* synd, int* out)
+    {
+
+    	// Prepare output sequence
+		for (int x = 0; x < 26; x++)
+		{
+			out[x] = in[x];  // Data from 0 to 15, check from 16 to 25
+		}
+
+    	// Ok, now lets try to decode it:
+		///////////
+		remove_offset_word(blk, out);
+
+		// Syndrome for the transmission errors
+		syndrome_calc(out, synd);
+
+		// printf("synd [ ");
+		// for (int k = 0; k < 10; k++)
+		// {
+		// 	printf(" %d ", synd[k]);
+		// 	//if (k % 4 == 3) printf(" ");
+		// }	
+		// printf("] %d \n", blk);
+
+		int synd_found = error_correction(synd, out);
+
+		printf("decd_synd: %d s: %d \n", blk, synd_found);
+
+		if (synd_found != -1)
+		{
+			// printf(" [ ");
+			// for (int k = 0; k < 26; k++)
+			// {
+			// 	printf("%d ", out[k]);
+			// }	
+			// printf("] after correction\n");
+			return 1;
+		}
+		return 0;
+    }
+
+    int sync_impl::error_correction(const int* synd, int* in)
     {
     	/*
 			Implementation of the error correction as seen in Appendix B of the U.S. RBDS Standard - April 1998
 
-			Corrects one bit at a time in a sequence of up to 5 erroneous bits. If bits are not in sequence,
-			no correction is done. To correct the remainig bits, update the syndrome and call this function again.
+			Compares the given syndrome with a table to infer on the error mask. Corrects up to two erroneous bits at a time.
 
 			Input:
 				const int* synd : a previously calculated syndrome vector (size 10)
 				int* in 		: the data bit vector (will be updated with the correct bit) (size 26)
     	*/
 
-    	int synd_reg[10] = {0,0,0,0,0,0,0,0,0,0};
-    	int synd_tmp[10] = {0,0,0,0,0,0,0,0,0,0};
-    	int error_mask[26] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+		int synd_index = -1;
 
-  //   	printf(" [ ");
-		// for (int k = 0; k < 26; k++)
-		// {
-		// 	printf("%d ", in[k]);
-		// }	
-		// printf("] !\n");
+		int error_mask[26] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-    	// Initializing the syndrome register for initial data correction:
-    	for (int i = 0; i < 10; i++)
-    	{
-    		synd_reg[9 - i] = synd[i];
-    	}
+		// Correction matrix with syndromes and error mask. Syndromes are the first 10 columns and corresponding 
+		// error mask are the remaining 26 columns:
+		
+		int corr[137][36] =    {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,1,0,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,1,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,1,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,1,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,1,0,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,1,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,0,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,1,1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,1,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,1,1,1,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,1,1,0,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,0,0,0,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,1,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,1,1,1,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,0,0,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,1,0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,1,0,1,0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,0,0,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,1,0,0,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,1,1,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,1,0,0,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,1,0,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,0,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,1,0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,0,1,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,1,1,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,1,1,0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,1,1,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,1,0,1,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,1,1,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,1,1,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,0,0,1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,1,1,1,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,1,1,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,1,1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0},
+								{1,1,1,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0},
+								{0,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0},
+								{0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0}};
 
-		// printf(" s < ");
-		// for (int k = 0; k < 10; k++)
-		// {
-		// 	printf("%d ", synd_reg[k]);
-		// }	
-		// printf(">\n");
-
-    	// Syndrome matrix multiplication
-		for (int i = 0; i < 26; i++)
+		// Search the correction matrix for the detected syndrome
+		for (int x = 0; x < 138; x++)
 		{
-			// Check to see if there's a bit to correct
-			if (!(synd_reg[0] || synd_reg[1] || synd_reg[2] || synd_reg[3] || synd_reg[4]) && synd_reg[9])
+			if (memcmp(synd, &corr[x][0], sizeof(int) * 10) == 0)
 			{
-				error_mask[i] = synd_reg[9];
+				// Lets store which syndrome was found
+				synd_index = x;
+
 				break;
 			}
-
-			if (i < 16)
-			{
-				// Rotation of the register and xor operations
-				synd_tmp[0] = synd_reg[9];  					synd_tmp[1] = synd_reg[0];  synd_tmp[2] = synd_reg[1];                      synd_tmp[3] = (synd_reg[9] + synd_reg[2]) % 2;  synd_tmp[4] = (synd_reg[9] + synd_reg[3]) % 2;
-				synd_tmp[5] = (synd_reg[9] + synd_reg[4]) % 2;  synd_tmp[6] = synd_reg[5];  synd_tmp[7] = (synd_reg[9] + synd_reg[6]) % 2;  synd_tmp[8] = (synd_reg[9] + synd_reg[7]) % 2;  synd_tmp[9] = synd_reg[8];
-			}
-			else
-			{
-				// Rotation of the register
-				synd_tmp[0] = 0;  			synd_tmp[1] = synd_reg[0];  synd_tmp[2] = synd_reg[1];  synd_tmp[3] = synd_reg[2];  synd_tmp[4] = synd_reg[3];
-				synd_tmp[5] = synd_reg[4];  synd_tmp[6] = synd_reg[5];  synd_tmp[7] = synd_reg[6];  synd_tmp[8] = synd_reg[7];  synd_tmp[9] = synd_reg[8];
-			}
-
-			// Update the register
-			for (int k = 0; k < 10; k++)
-			{
-				synd_reg[k] = synd_tmp[k];
-			}
-
-			// printf(" %d < ", i);
-			// for (int k = 0; k < 10; k++)
-			// {
-			// 	printf("%d ", synd_reg[k]);
-			// }
-			// printf(">\n");
-
 		}
 
-		// Applying the data correction:
-    	for (int i = 0; i < 26; i++)
-    	{
-    		in[i] = error_mask[i] ^ in[i];
+		if (synd_index != -1)
+		{
+			// Applying the data correction:
+    		for (int i = 0; i < 26; i++)
+    		{
+    			// Correct the received bits with the error mask given by the detected syndrome
+    			in[i] = (corr[synd_index][10 + i] + in[i]) % 2;
+    		}
     	}
+    	return synd_index;
     }
+
+  //   void sync_impl::error_correction(const int* synd, int* in)
+  //   {
+  //   	/*
+		// 	Implementation of the error correction as seen in Appendix B of the U.S. RBDS Standard - April 1998
+
+		// 	Corrects one bit at a time in a sequence of up to 5 erroneous bits. If bits are not in sequence,
+		// 	no correction is done. To correct the remainig bits, update the syndrome and call this function again.
+
+		// 	Input:
+		// 		const int* synd : a previously calculated syndrome vector (size 10)
+		// 		int* in 		: the data bit vector (will be updated with the correct bit) (size 26)
+  //   	*/
+
+  //   	int synd_reg[10] = {0,0,0,0,0,0,0,0,0,0};
+  //   	int synd_tmp[10] = {0,0,0,0,0,0,0,0,0,0};
+  //   	int error_mask[26] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+  // //   	printf(" [ ");
+		// // for (int k = 0; k < 26; k++)
+		// // {
+		// // 	printf("%d ", in[k]);
+		// // }	
+		// // printf("] !\n");
+
+  //   	// Initializing the syndrome register for initial data correction:
+  //   	for (int i = 0; i < 10; i++)
+  //   	{
+  //   		synd_reg[9 - i] = synd[i];
+  //   	}
+
+		// // printf(" s < ");
+		// // for (int k = 0; k < 10; k++)
+		// // {
+		// // 	printf("%d ", synd_reg[k]);
+		// // }	
+		// // printf(">\n");
+
+  //   	// Syndrome matrix multiplication
+		// for (int i = 0; i < 26; i++)
+		// {
+		// 	// Check to see if there's a bit to correct
+		// 	if (!(synd_reg[0] || synd_reg[1] || synd_reg[2] || synd_reg[3] || synd_reg[4]) && synd_reg[9])
+		// 	{
+		// 		error_mask[i] = synd_reg[9];
+		// 		break;
+		// 	}
+
+		// 	if (i < 16)
+		// 	{
+		// 		// Rotation of the register and xor operations
+		// 		synd_tmp[0] = synd_reg[9];  					synd_tmp[1] = synd_reg[0];  synd_tmp[2] = synd_reg[1];                      synd_tmp[3] = (synd_reg[9] + synd_reg[2]) % 2;  synd_tmp[4] = (synd_reg[9] + synd_reg[3]) % 2;
+		// 		synd_tmp[5] = (synd_reg[9] + synd_reg[4]) % 2;  synd_tmp[6] = synd_reg[5];  synd_tmp[7] = (synd_reg[9] + synd_reg[6]) % 2;  synd_tmp[8] = (synd_reg[9] + synd_reg[7]) % 2;  synd_tmp[9] = synd_reg[8];
+		// 	}
+		// 	else
+		// 	{
+		// 		// Rotation of the register
+		// 		synd_tmp[0] = 0;  			synd_tmp[1] = synd_reg[0];  synd_tmp[2] = synd_reg[1];  synd_tmp[3] = synd_reg[2];  synd_tmp[4] = synd_reg[3];
+		// 		synd_tmp[5] = synd_reg[4];  synd_tmp[6] = synd_reg[5];  synd_tmp[7] = synd_reg[6];  synd_tmp[8] = synd_reg[7];  synd_tmp[9] = synd_reg[8];
+		// 	}
+
+		// 	// Update the register
+		// 	for (int k = 0; k < 10; k++)
+		// 	{
+		// 		synd_reg[k] = synd_tmp[k];
+		// 	}
+
+		// 	// printf(" %d < ", i);
+		// 	// for (int k = 0; k < 10; k++)
+		// 	// {
+		// 	// 	printf("%d ", synd_reg[k]);
+		// 	// }
+		// 	// printf(">\n");
+
+		// }
+
+		// // Applying the data correction:
+  //   	for (int i = 0; i < 26; i++)
+  //   	{
+  //   		in[i] = error_mask[i] ^ in[i];
+  //   	}
+  //   }
 
   } /* namespace fmrds */
 } /* namespace gr */
