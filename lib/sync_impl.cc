@@ -43,78 +43,78 @@ namespace gr {
     {
 		// Size of a group
     	set_history(26);
-    	//set_output_multiple(26);
+    	set_output_multiple(26);
 
-    	// Parity check matrix
-		//     This is used for syndrome calculation
-		//     and syncronization
-    	int pchk[26][10] =  {{1,0,0,0,0,0,0,0,0,0},
-						  	 {0,1,0,0,0,0,0,0,0,0},
-							 {0,0,1,0,0,0,0,0,0,0},
-							 {0,0,0,1,0,0,0,0,0,0},
-							 {0,0,0,0,1,0,0,0,0,0},
-							 {0,0,0,0,0,1,0,0,0,0},
-							 {0,0,0,0,0,0,1,0,0,0},
-							 {0,0,0,0,0,0,0,1,0,0},
-							 {0,0,0,0,0,0,0,0,1,0},
-							 {0,0,0,0,0,0,0,0,0,1},
-							 {1,0,1,1,0,1,1,1,0,0},
-							 {0,1,0,1,1,0,1,1,1,0},
-							 {0,0,1,0,1,1,0,1,1,1},
-							 {1,0,1,0,0,0,0,1,1,1},
-							 {1,1,1,0,0,1,1,1,1,1},
-							 {1,1,0,0,0,1,0,0,1,1},
-							 {1,1,0,1,0,1,0,1,0,1},
-							 {1,1,0,1,1,1,0,1,1,0},
-							 {0,1,1,0,1,1,1,0,1,1},
-							 {1,0,0,0,0,0,0,0,0,1},
-							 {1,1,1,1,0,1,1,1,0,0},
-							 {0,1,1,1,1,0,1,1,1,0},
-							 {0,0,1,1,1,1,0,1,1,1},
-							 {1,0,1,0,1,0,0,1,1,1},
-							 {1,1,1,0,0,0,1,1,1,1},
-							 {1,1,0,0,0,1,1,0,1,1}};
+  //   	// Parity check matrix
+		// //     This is used for syndrome calculation
+		// //     and syncronization
+  //   	int pchk[26][10] =  {{1,0,0,0,0,0,0,0,0,0},
+		// 				  	 {0,1,0,0,0,0,0,0,0,0},
+		// 					 {0,0,1,0,0,0,0,0,0,0},
+		// 					 {0,0,0,1,0,0,0,0,0,0},
+		// 					 {0,0,0,0,1,0,0,0,0,0},
+		// 					 {0,0,0,0,0,1,0,0,0,0},
+		// 					 {0,0,0,0,0,0,1,0,0,0},
+		// 					 {0,0,0,0,0,0,0,1,0,0},
+		// 					 {0,0,0,0,0,0,0,0,1,0},
+		// 					 {0,0,0,0,0,0,0,0,0,1},
+		// 					 {1,0,1,1,0,1,1,1,0,0},
+		// 					 {0,1,0,1,1,0,1,1,1,0},
+		// 					 {0,0,1,0,1,1,0,1,1,1},
+		// 					 {1,0,1,0,0,0,0,1,1,1},
+		// 					 {1,1,1,0,0,1,1,1,1,1},
+		// 					 {1,1,0,0,0,1,0,0,1,1},
+		// 					 {1,1,0,1,0,1,0,1,0,1},
+		// 					 {1,1,0,1,1,1,0,1,1,0},
+		// 					 {0,1,1,0,1,1,1,0,1,1},
+		// 					 {1,0,0,0,0,0,0,0,0,1},
+		// 					 {1,1,1,1,0,1,1,1,0,0},
+		// 					 {0,1,1,1,1,0,1,1,1,0},
+		// 					 {0,0,1,1,1,1,0,1,1,1},
+		// 					 {1,0,1,0,1,0,0,1,1,1},
+		// 					 {1,1,1,0,0,0,1,1,1,1},
+		// 					 {1,1,0,0,0,1,1,0,1,1}};
 
-		// Initialization of the precalculated syndromes for the check words
-		int syns[50] = 		{1,1,1,1,0,1,1,0,0,0,  // check word A
-							 1,1,1,1,0,1,0,1,0,0,  // check word B
-							 1,0,0,1,0,1,1,1,0,0,  // check word C
-							 1,1,1,1,0,0,1,1,0,0,  // check word C'
-							 1,0,0,1,0,1,1,0,0,0}; // check word D
+		// // Initialization of the precalculated syndromes for the check words
+		// int syns[50] = 		{1,1,1,1,0,1,1,0,0,0,  // check word A
+		// 					 1,1,1,1,0,1,0,1,0,0,  // check word B
+		// 					 1,0,0,1,0,1,1,1,0,0,  // check word C
+		// 					 1,1,1,1,0,0,1,1,0,0,  // check word C'
+		// 					 1,0,0,1,0,1,1,0,0,0}; // check word D
 
-							 // Initialization of the precalculated syndromes for the check words
-		int checks[50] = 	{0,0,1,1,1,1,1,1,0,0,  // check word A
-							 0,1,1,0,0,1,1,0,0,0,  // check word B
-							 0,1,0,1,1,0,1,0,0,0,  // check word C
-							 1,1,0,1,0,1,0,0,0,0,  // check word C'
-							 0,1,1,0,1,1,0,1,0,0}; // check word D
+		// 					 // Initialization of the precalculated syndromes for the check words
+		// int checks[50] = 	{0,0,1,1,1,1,1,1,0,0,  // check word A
+		// 					 0,1,1,0,0,1,1,0,0,0,  // check word B
+		// 					 0,1,0,1,1,0,1,0,0,0,  // check word C
+		// 					 1,1,0,1,0,1,0,0,0,0,  // check word C'
+		// 					 0,1,1,0,1,1,0,1,0,0}; // check word D
 
-    	// Initializing the property matrices
-    	for (int i = 0; i < 26; i++)
-    	{
-    		for (int j = 0; j < 10; j++)
-    		{
-    			d_parity_chk[i][j] = pchk[i][j];
-    		}
-    	}
+  //   	// Initializing the property matrices
+  //   	for (int i = 0; i < 26; i++)
+  //   	{
+  //   		for (int j = 0; j < 10; j++)
+  //   		{
+  //   			d_parity_chk[i][j] = pchk[i][j];
+  //   		}
+  //   	}
 
-    	// Initializing the property matrices
-    	for (int i = 0; i < 50; i++)
-    	{
-    		d_syndromes[i] = syns[i];
-    	}
+  //   	// Initializing the property matrices
+  //   	for (int i = 0; i < 50; i++)
+  //   	{
+  //   		d_syndromes[i] = syns[i];
+  //   	}
 
-    	// Initializing the check words
-    	for (int i = 0; i < 50; i++)
-    	{
-    		d_checks[i] = checks[i];
-    	}
+  //   	// Initializing the check words
+  //   	for (int i = 0; i < 50; i++)
+  //   	{
+  //   		d_checks[i] = checks[i];
+  //   	}
 
-    	d_last_syndrome = -1;
-     	d_last_seen = 0;
-	    d_sync_cntr = 0;
-    	d_overall = 0;
-    	d_syncd = 0;
+  //   	d_last_blk = -1;
+  //    	d_last_seen = 0;
+	 //    d_sync_cntr = 0;
+  //   	d_overall = 0;
+  //   	d_syncd = 0;
 
     }
 
@@ -145,8 +145,11 @@ namespace gr {
 		int blk = 0, val = 0, sum = 0;
 		int lost_sync = 1;
 
+		int i = 0;
 
-		for (int i = 0; i < noutput_items; i++)
+		//printf("w %d\n",noutput_items);
+
+		while(i < noutput_items)
 		{
 
 			// Isolate the input sequence
@@ -154,6 +157,15 @@ namespace gr {
 			{
 				input_seq[x] = in[i+x];  // Data from 0 to 15, check from 16 to 25
 			}
+
+			/*printf(" [ ");
+			for (int k = 0; k < 26; k++)
+			{
+				printf("%d ", input_seq[k]);
+				if (k % 4 == 3) printf(" ");
+			}	
+			printf("]");
+			printf(" seq\n");*/
 
 			if (!d_syncd)
 			{
@@ -168,220 +180,222 @@ namespace gr {
 				// Check against known syndromes
 				blk = block_ident(&synd[0]);
 
-				if ((blk > -1) && (blk < 5))
+				if (blk != -1)
 				{
-					// We're in presync!
-
-					// Check if we're sync'ed
-					if ((d_sync_cntr == 26) && (d_last_syndrome != -1))
+					// If we're here, it means we identified a block
+					
+					// Check if:
+					// * its the first identified block OR
+					// * its the first identified block after a lost syncronization
+					if ((d_sync_cntr == 0) || (d_sync_cntr != 26))
 					{
-						// Were we in presync before?
-						if ((blk == (d_last_syndrome + 1)) || ((blk == 4) && (d_last_syndrome == 2 )) || ((blk == 3) && (d_last_syndrome == 1 )) || ((blk == 0) && (d_last_syndrome == 4 )))
+						// We're in presync (first block of two 26 bits apart needed to declare synchronized)!
+						printf(" [ ");
+						for (int k = 0; k < 26; k++)
 						{
-							d_syncd = 1;
-						}
-						else
-						{
-							d_syncd = 0;
-							printf("x\n");
+							printf("%d ", input_seq[k]);
+							if (k % 4 == 3) printf(" ");
+						}	
+						printf("]");
+						printf(" psyn: %d @ %d\n", blk, d_sync_cntr);
 
-						}
-						//printf("seen: %d pre?: %d \n", d_last_syndrome, d_syncd);
-					}
-					else
-					{
-						d_syncd = 0;
-					} 
-
-					// DEBUG CODE:
-					if (d_syncd == 1)
-					{
-						// printf(" [ ");
-						// for (int k = 0; k < 16; k++)
-						// {
-						// 	printf("%d ", input_seq[k]);
-						// 	if (k % 4 == 3) printf(" ");
-						// }	
-						// printf("] %d <- %d p\n", blk, d_last_syndrome);
-						printf("psyn: %d \n", blk);
-					}
-					else
-					{
-						d_last_syndrome = blk;
+						d_last_blk = blk;
 						d_sync_cntr = 0;
 					}
-
-				}
-
-				// lost presync
-				if (d_sync_cntr > 26)
-				{
-					d_last_syndrome = -1;
-					d_syncd = 0;
-				}
-
-			}
-			//else 
-			if (d_syncd)
-			{
-				// Check if we're sync'ed
-				if (d_sync_cntr == 26)
-				{
-
-					//
-					// Perform data decoding as described in
-					// Appendices B (section B.2.2) of the U.S. RBDS Standard - April 1998
-					//
-
-					// This is to be changed if a block is correctly decoded
-					lost_sync = 1;
-
-					// Re-initialize the decoded sequence
-					for (int x = 0; x < 26; x++)
+					// If its not the first identified block then check if we're sync'ed
+					//    Being sync'ed means that:
+					//    * Last identified block was seen exactly 26 bits before AND
+					//    * The newly identified block is in the correct sequence with respect to the previous one  
+					else if ((d_sync_cntr == 26) && 
+							(((d_last_blk == 0 ) && (blk == 1)) || 
+							((d_last_blk == 1 ) && (blk == 2)) ||
+							((d_last_blk == 1 ) && (blk == 3)) ||
+							((d_last_blk == 2 ) && (blk == 4)) ||
+							((d_last_blk == 3 ) && (blk == 4)) ||
+							((d_last_blk == 4 ) && (blk == 0))))
 					{
-						decoded_seq[x] = 0;  // Data from 0 to 15, check from 16 to 25
-					}
-
-					// We're synchronized so we can go ahead and try to decode the next block 
-					// based on the order: A -> B -> C (or C') -> D
-					if ((d_last_syndrome == 0) || (d_last_syndrome == 3))
-					{
-						blk = d_last_syndrome + 1;
-
-						printf("decd: %d \n", blk);
-						// Ok, now lets try to decode it:
-						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
+						// We're sync'ed!
+						printf(" [ ");
+						for (int k = 0; k < 26; k++)
 						{
-							printf("[");
-							for (int k = 0; k < 16; k+=4)
-							{
-								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
-								printf("%X", hex);
-								if (k % 4 == 3) printf(" ");
-							}	
-							printf("] %d <- %d\n", blk, d_last_syndrome);
+							printf("%d ", input_seq[k]);
+							if (k % 4 == 3) printf(" ");
+						}	
+						printf("]");
+						printf(" sync: %d \n", blk);
 
-							d_last_syndrome = blk;
-							d_sync_cntr = 0;
-							lost_sync = 0;
-						}
-					}
-					else if (d_last_syndrome == 4)
-					{
-						blk = 0;
-
-						printf("decd: %d \n", blk);
-						// Ok, now lets try to decode it:
-						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
-						{
-							printf("[");
-							for (int k = 0; k < 16; k+=4)
-							{
-								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
-								printf("%X", hex);
-								if (k % 4 == 3) printf(" ");
-							}	
-							printf("] %d <- %d\n", blk, d_last_syndrome);
-
-							d_last_syndrome = blk;
-							d_sync_cntr = 0;
-							lost_sync = 0;
-						}
-					}
-					else if (d_last_syndrome == 2)
-					{
-						blk = 4;
-
-						printf("decd: %d \n", blk);
-						// Ok, now lets try to decode it:
-						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
-						{
-							printf("[");
-							for (int k = 0; k < 16; k+=4)
-							{
-								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
-								printf("%X", hex);
-								if (k % 4 == 3) printf(" ");
-							}	
-							printf("] %d <- %d\n", blk, d_last_syndrome);
-
-							d_last_syndrome = blk;
-							d_sync_cntr = 0;
-							lost_sync = 0;
-						}
+						d_syncd = 1;
 					}
 					else
 					{
-						blk = 2;
-
-						printf("decd: %d \n", blk);
-						// Ok, now lets try to decode it:
-						if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
-						{
-							printf("[");
-							for (int k = 0; k < 16; k+=4)
-							{
-								int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
-								printf("%X", hex);
-								if (k % 4 == 3) printf(" ");
-							}	
-							printf("] %d <- %d\n", blk, d_last_syndrome);
-
-							d_last_syndrome = blk;
-							d_sync_cntr = 0;
-							lost_sync = 0;
-						}
-						else
-						{
-							// Ooops, couldnt decode a 2.. lets try a 3:
-							blk = 3;
-
-							printf("decd: %d \n", blk);
-							// Ok, now lets try to decode it:
-							if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
-							{
-								printf("[");
-								for (int k = 0; k < 16; k+=4)
-								{
-									int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
-									printf("%X", hex);
-									if (k % 4 == 3) printf(" ");
-								}	
-								printf("] %d <- %d\n", blk, d_last_syndrome);
-
-								d_last_syndrome = blk;
-								d_sync_cntr = 0;
-								lost_sync = 0;
-							}
-
-						}
-
-					}
-
-					if (lost_sync)
-					{
-						//printf("Sync lost after block %d\n", d_last_syndrome);
-						printf("xx\n\n");
-
-						// We loose sync... :(
-						d_last_syndrome = -1;
-						d_sync_cntr = 0;
-						d_syncd = 0;
+						// We should NEVER be here
+						printf("oops\n");
 					}
 				}
 			}
+			//else 
+			// if (d_syncd)
+			// {
+			// 	// Check if we're sync'ed
+			// 	if (d_sync_cntr == 26)
+			// 	{
+
+			// 		//
+			// 		// Perform data decoding as described in
+			// 		// Appendices B (section B.2.2) of the U.S. RBDS Standard - April 1998
+			// 		//
+
+			// 		// This is to be changed if a block is correctly decoded
+			// 		lost_sync = 1;
+
+			// 		// Re-initialize the decoded sequence
+			// 		for (int x = 0; x < 26; x++)
+			// 		{
+			// 			decoded_seq[x] = 0;  // Data from 0 to 15, check from 16 to 25
+			// 		}
+
+			// 		// We're synchronized so we can go ahead and try to decode the next block 
+			// 		// based on the order: A -> B -> C (or C') -> D
+			// 		if ((d_last_blk == 0) || (d_last_blk == 3))
+			// 		{
+			// 			blk = d_last_blk + 1;
+
+			// 			printf("decd: %d \n", blk);
+			// 			// Ok, now lets try to decode it:
+			// 			if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
+			// 			{
+			// 				printf("[");
+			// 				for (int k = 0; k < 16; k+=4)
+			// 				{
+			// 					int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+			// 					printf("%X", hex);
+			// 					if (k % 4 == 3) printf(" ");
+			// 				}	
+			// 				printf("] %d <- %d\n", blk, d_last_blk);
+
+			// 				d_last_blk = blk;
+			// 				d_sync_cntr = 0;
+			// 				lost_sync = 0;
+			// 			}
+			// 		}
+			// 		else if (d_last_blk == 4)
+			// 		{
+			// 			blk = 0;
+
+			// 			printf("decd: %d \n", blk);
+			// 			// Ok, now lets try to decode it:
+			// 			if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
+			// 			{
+			// 				printf("[");
+			// 				for (int k = 0; k < 16; k+=4)
+			// 				{
+			// 					int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+			// 					printf("%X", hex);
+			// 					if (k % 4 == 3) printf(" ");
+			// 				}	
+			// 				printf("] %d <- %d\n", blk, d_last_blk);
+
+			// 				d_last_blk = blk;
+			// 				d_sync_cntr = 0;
+			// 				lost_sync = 0;
+			// 			}
+			// 		}
+			// 		else if (d_last_blk == 2)
+			// 		{
+			// 			blk = 4;
+
+			// 			printf("decd: %d \n", blk);
+			// 			// Ok, now lets try to decode it:
+			// 			if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
+			// 			{
+			// 				printf("[");
+			// 				for (int k = 0; k < 16; k+=4)
+			// 				{
+			// 					int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+			// 					printf("%X", hex);
+			// 					if (k % 4 == 3) printf(" ");
+			// 				}	
+			// 				printf("] %d <- %d\n", blk, d_last_blk);
+
+			// 				d_last_blk = blk;
+			// 				d_sync_cntr = 0;
+			// 				lost_sync = 0;
+			// 			}
+			// 		}
+			// 		else
+			// 		{
+			// 			blk = 2;
+
+			// 			printf("decd: %d \n", blk);
+			// 			// Ok, now lets try to decode it:
+			// 			if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
+			// 			{
+			// 				printf("[");
+			// 				for (int k = 0; k < 16; k+=4)
+			// 				{
+			// 					int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+			// 					printf("%X", hex);
+			// 					if (k % 4 == 3) printf(" ");
+			// 				}	
+			// 				printf("] %d <- %d\n", blk, d_last_blk);
+
+			// 				d_last_blk = blk;
+			// 				d_sync_cntr = 0;
+			// 				lost_sync = 0;
+			// 			}
+			// 			else
+			// 			{
+			// 				// Ooops, couldnt decode a 2.. lets try a 3:
+			// 				blk = 3;
+
+			// 				printf("decd: %d \n", blk);
+			// 				// Ok, now lets try to decode it:
+			// 				if (decode(blk, &input_seq[0], &synd[0], &decoded_seq[0]))
+			// 				{
+			// 					printf("[");
+			// 					for (int k = 0; k < 16; k+=4)
+			// 					{
+			// 						int hex = decoded_seq[k]*8 + decoded_seq[k+1]*4 + decoded_seq[k+2]*2 + decoded_seq[k+3]*1; 
+			// 						printf("%X", hex);
+			// 						if (k % 4 == 3) printf(" ");
+			// 					}	
+			// 					printf("] %d <- %d\n", blk, d_last_blk);
+
+			// 					d_last_blk = blk;
+			// 					d_sync_cntr = 0;
+			// 					lost_sync = 0;
+			// 				}
+
+			// 			}
+
+			// 		}
+
+			// 		if (lost_sync)
+			// 		{
+			// 			//printf("Sync lost after block %d\n", d_last_blk);
+			// 			printf("xx\n\n");
+
+			// 			// We loose sync... :(
+			// 			d_last_blk = -1;
+			// 			d_sync_cntr = 0;
+			// 			d_syncd = 0;
+			// 		}
+			// 	}
+			// }
 
 			d_sync_cntr++;
 
 			out[i] = in[i];
 			if (d_syncd)
 			{
-				syncd[i] = d_last_syndrome;
+				syncd[i] = d_last_blk;
 			}
 			else
 			{
 				syncd[i] = -1;
 			}
+
+			i++;
 
 		}
 
@@ -403,19 +417,19 @@ namespace gr {
 
     	*/
 
-    	int tmp = 0, sum = 0;
+    	int sum = 0;
 
     	// Syndrome matrix multiplication
 		for (int y = 0; y < 10; y++)
 		{
-			tmp = 0;
+			res[y] = 0;
 
 			for (int x = 0; x < 26; x++)
 			{
-				tmp += d_parity_chk[x][y] * in[x];
+				res[y] += in[x] * d_parity_chk[x][y];
 			}
 
-			res[y] = tmp % 2;
+			res[y] = res[y] % 2;
 
 			// Accumulate the number of observed errors ("1"s after the matrix multiplication)
 			sum += res[y]; 

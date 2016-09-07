@@ -64,7 +64,7 @@ namespace gr {
         // Last identified syndrome
         //      0->A, 1->B, 2->C, 3->C', 4->D
         //     -1->"no sync"              
-        int d_last_syndrome;
+        int d_last_blk;
 
         // Last identified syndrome
         //      occurence
