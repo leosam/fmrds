@@ -31,6 +31,7 @@ list(APPEND fmrds_sources
     diff_decoder_impl.cc
     sync_impl.cc
     data_decoder_impl.cc
+    time_sync_impl.cc
 )
 
 add_library(gnuradio-fmrds SHARED ${fmrds_sources})

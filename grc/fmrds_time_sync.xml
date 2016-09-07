@@ -1,0 +1,35 @@
+<block>
+  <name>Time Sync</name>
+  <key>fmrds_time_sync</key>
+  <category>FMRDS</category>
+  <import>import fmrds</import>
+  <make>fmrds.time_sync($n_samples, $n_resync)</make>
+  <param>
+    <name>N of half cycles</name>
+    <key>n_samples</key>
+    <value>10</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Resync timeout</name>
+    <key>n_resync</key>
+    <value>1000</value>
+    <type>int</type>
+  </param>
+  <sink>
+    <name>in</name>
+    <type>float</type>
+  </sink>
+  <sink>
+    <name>clk</name>
+    <type>float</type>
+  </sink>
+  <source>
+    <name>out</name>
+    <type>float</type>
+  </source>
+  <source>
+    <name>clk</name>
+    <type>float</type>
+  </source>
+</block>

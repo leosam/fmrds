@@ -9,6 +9,7 @@
 #include "fmrds/diff_decoder.h"
 #include "fmrds/sync.h"
 #include "fmrds/data_decoder.h"
+#include "fmrds/time_sync.h"
 %}
 
 
@@ -22,3 +23,5 @@ GR_SWIG_BLOCK_MAGIC2(fmrds, diff_decoder);
 GR_SWIG_BLOCK_MAGIC2(fmrds, sync);
 %include "fmrds/data_decoder.h"
 GR_SWIG_BLOCK_MAGIC2(fmrds, data_decoder);
+%include "fmrds/time_sync.h"
+GR_SWIG_BLOCK_MAGIC2(fmrds, time_sync);
